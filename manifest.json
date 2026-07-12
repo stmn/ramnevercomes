@@ -1,0 +1,14 @@
+{
+  "name": "rambuy — fictional memory store",
+  "short_name": "rambuy",
+  "description": "Buy the DDR5 the world is waiting for. Nothing will be shipped. No payment is ever taken.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0071e3",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
