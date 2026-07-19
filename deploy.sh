@@ -27,4 +27,11 @@ cp robots.txt "$KEY.txt" "$STAGE/"  # sitemap.xml generuje build.mjs do dist/
 
 npx wrangler pages deploy "$STAGE" --project-name=ramnevercomes --branch=main
 
+# IndexNow: pingnij Bing/Yandex lista URL-i z sitemap (nie blokuje deployu przy bledzie)
+URLS=$(grep -o '<loc>[^<]*</loc>' dist/sitemap.xml | sed 's/<[^>]*>//g' | sed 's/.*/"&"/' | paste -sd, -)
+curl -s -m 20 -X POST "https://api.indexnow.org/indexnow" \
+  -H "Content-Type: application/json; charset=utf-8" \
+  -d "{\"host\":\"ramnevercomes.com\",\"key\":\"$KEY\",\"keyLocation\":\"https://ramnevercomes.com/$KEY.txt\",\"urlList\":[$URLS]}" \
+  -o /dev/null -w "IndexNow ping: HTTP %{http_code}\n" || true
+
 echo "OK: https://ramnevercomes.com/"

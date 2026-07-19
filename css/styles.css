@@ -945,6 +945,13 @@ img { max-width: 100%; display: block; }
 .coll-item.rare { border-color: #8847ff; }
 .coll-item.legendary { border-color: #eb4b4b; }
 .coll-item img { border-radius: 9px; margin-bottom: 6px; }
+.coll-item { position: relative; }
+.coll-count {
+  position: absolute; top: 5px; right: 5px; z-index: 1;
+  font-style: normal; font-weight: 700; font-size: 11px;
+  padding: 2px 7px; border-radius: 999px;
+  background: var(--ink); color: var(--bg);
+}
 .coll-item small { font-size: 9.5px; color: var(--ink-4); display: block; line-height: 1.3; }
 
 /* ---------- scratch card ---------- */
