@@ -1282,10 +1282,7 @@ function instantFromPopover() {
   placeOrder();
 }
 
-const IBOK_KEY = 'rambuy.ibok';
-
 // One-click purchase of a single unit straight from a card.
-// First use explains the delivery time in a modal.
 // Wycena instant buy z uwzglednieniem kuponu (auto lub recznie zalozonego).
 function instantPricing(p) {
   maybeAutoApplyPromo();
@@ -1296,30 +1293,8 @@ function instantPricing(p) {
   return { base, promo: rate ? promo : '', discount, cost: base - discount };
 }
 
+// Bez modala potwierdzenia (usuniety na prosbe usera) - klik kupuje od razu.
 function instantBuy(id) {
-  const p = product(id);
-  const { cost } = instantPricing(p);
-  if (rpBal < cost) { toast(t('toast.needMore', { amount: fmtRP(cost - rpBal) }), 'lock'); return; }
-  if (!localStorage.getItem(IBOK_KEY)) {
-    document.getElementById('overlay-root').innerHTML = `
-      <div class="overlay"><div class="unlock-modal">
-        <div class="um-icon">${icon('zap', 30)}</div>
-        <h2>${t('modal.instant.title')}</h2>
-        <p>${t('modal.instant.body', { name: p.name, amount: fmtRP(cost), time: fmtDuration(deliveredAt()) })}</p>
-        <label class="um-check"><input type="checkbox" id="ib-skip"> ${t('modal.instant.skip')}</label>
-        <div class="um-actions">
-          <button class="btn ghost" onclick="document.getElementById('overlay-root').innerHTML = ''">${t('modal.instant.cancel')}</button>
-          <button class="btn" onclick="confirmInstant('${id}')">${icon('zap', 13)} ${t('modal.instant.buy', { amount: fmtRP(cost) })}</button>
-        </div>
-      </div></div>`;
-    return;
-  }
-  doInstantBuy(id);
-}
-
-function confirmInstant(id) {
-  if (document.getElementById('ib-skip')?.checked) localStorage.setItem(IBOK_KEY, '1');
-  document.getElementById('overlay-root').innerHTML = '';
   doInstantBuy(id);
 }
 
@@ -2179,7 +2154,7 @@ function clearProgress(btn) {
     }, 4000);
     return;
   }
-  [ORDERS_KEY, GACHA_KEY, STATS_KEY, 'rambuy.streak', WHEEL_KEY, PROMO_KEY, SEEN_KEY, CODES_KEY, REVEAL_KEY, DISCOVER_KEY, CASE_KEY, CHEAT_KEY, BP_KEY, IBOK_KEY, ACH_KEY, MARKET_KEY, BAG_KEY, 'rambuy.queue', AUTOPROMO_KEY, 'rambuy.lvlseen', 'rambuy.allkits', 'rambuy.msseen'].forEach(k => localStorage.removeItem(k));
+  [ORDERS_KEY, GACHA_KEY, STATS_KEY, 'rambuy.streak', WHEEL_KEY, PROMO_KEY, SEEN_KEY, CODES_KEY, REVEAL_KEY, DISCOVER_KEY, CASE_KEY, CHEAT_KEY, BP_KEY, 'rambuy.ibok', ACH_KEY, MARKET_KEY, BAG_KEY, 'rambuy.queue', AUTOPROMO_KEY, 'rambuy.lvlseen', 'rambuy.allkits', 'rambuy.msseen'].forEach(k => localStorage.removeItem(k));
   dbg('reset', {});
   rpBal = 128;
   saveRp();
@@ -2355,7 +2330,6 @@ function openCase(type = 'standard') {
   const target = REEL_WIN_IDX * step + tileW / 2 - wrapW / 2 + jitter;
   const DUR = 5800;
 
-  run.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   requestAnimationFrame(() => requestAnimationFrame(() => {
     reel.style.transition = `transform ${DUR}ms cubic-bezier(.08,.6,.1,1)`;
     reel.style.transform = `translateX(${-target}px)`;
