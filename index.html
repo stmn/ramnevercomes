@@ -3,18 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>rambuy — Memory. Finally within reach.</title>
-  <meta name="description" content="rambuy is a fictional DDR5 memory store. Nothing will be shipped. No payment is ever taken.">
+  <title>RamNeverComes - Memory. Finally within reach.</title>
+  <meta name="description" content="RamNeverComes is a fictional DDR5 memory store. Nothing will be shipped. No payment is ever taken.">
+  <link rel="canonical" href="https://ramnevercomes.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ramnevercomes.com/">
+  <meta property="og:site_name" content="RamNeverComes">
+  <meta property="og:title" content="RamNeverComes - Memory. Finally within reach.">
+  <meta property="og:description" content="A fictional DDR5 memory store. Nothing will be shipped. No payment is ever taken. Shop freely.">
+  <meta property="og:image" content="https://ramnevercomes.com/assets/og-image-2.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://ramnevercomes.com/assets/og-image-2.jpg">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230071e3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 19v-3'/><path d='M10 19v-3'/><path d='M14 19v-3'/><path d='M18 19v-3'/><path d='M8 11V9'/><path d='M16 11V9'/><path d='M12 11V9'/><path d='M2 15h20'/><path d='M2 7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1.1a2 2 0 0 0 0 3.837V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5.1a2 2 0 0 0 0-3.837Z'/></svg>">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#ffffff">
 </head>
 <body>
-  <div id="notice-bar" data-i18n="notice">Fictional store — nothing will be shipped, no payment is ever taken. Shop freely.</div>
+  <div id="notice-bar"><span class="ntc" data-i18n="notice">Fictional store — nothing will be shipped, no payment is ever taken. Shop freely.</span><span class="ntc ntc-dup" aria-hidden="true" data-i18n="notice">Fictional store — nothing will be shipped, no payment is ever taken. Shop freely.</span></div>
 
   <header id="site-nav">
-    <a class="logo" href="#/" data-icon="memory-stick">rambuy</a>
+    <a class="logo" href="#/" data-icon="memory-stick">RamNeverComes</a>
     <nav class="nav-links">
       <a href="#/kits"><span data-i18n="nav.kits">Kits</span></a>
       <a href="#/discover" id="nav-discover"><span data-i18n="nav.discover">Discover</span><i class="nav-dot" hidden></i><i class="nav-lock" hidden></i></a>
@@ -23,12 +34,12 @@
       <a href="#/market" id="nav-market"><span data-i18n="nav.market">Market</span><i class="nav-dot" hidden></i><i class="nav-lock" hidden></i></a>
       <a href="#/orders"><span data-i18n="nav.orders">Orders</span></a>
     </nav>
+    <a id="xp-chip" class="xp-chip" href="#/profile"></a>
     <div class="nav-actions">
-      <a id="xp-chip" class="xp-chip" href="#/profile"></a>
-      <span id="streak-chip" class="streak-chip" hidden></span>
       <button class="theme-btn" id="lang-btn" data-i18n-aria="nav.langAria" onclick="toggleLangMenu(event)"></button>
       <button class="theme-btn" id="theme-btn" data-i18n-aria="nav.themeAria" onclick="toggleTheme()"></button>
       <a class="bag-link" href="#/bag" data-i18n-aria="nav.bagAria" data-icon="shopping-bag" onclick="toggleMiniBag(event)"><span id="bag-count" class="bag-count" hidden>0</span></a>
+      <button class="theme-btn" id="burger-btn" data-icon="menu" data-i18n-aria="nav.menuAria" onclick="toggleBurger(event)"></button>
     </div>
   </header>
   <div id="mini-bag" hidden></div>
@@ -38,24 +49,20 @@
   <footer id="site-footer">
     <div class="foot-grid">
       <div class="foot-brand">
-        <b data-icon="memory-stick">rambuy</b>
+        <b data-icon="memory-stick">RamNeverComes</b>
         <p data-i18n="footer.tagline">The DDR5 store the world needed. Built for the joy of the purchase itself.</p>
-        <div class="foot-badges">
-          <span class="foot-badge" data-icon="shield-check" data-icon-size="13"><i data-i18n="footer.badge.free">No payments, ever</i></span>
-          <span class="foot-badge" data-icon="hard-drive" data-icon-size="13"><i data-i18n="footer.badge.local">100% in your browser</i></span>
-          <span class="foot-badge" data-icon="sparkles" data-icon-size="13"><i data-i18n="footer.badge.ai">AI-generated imagery</i></span>
-        </div>
       </div>
-      <div><h5 data-i18n="footer.shopHeader">Shop</h5><span data-i18n="footer.shop1">Desktop kits</span><span data-i18n="footer.shop2">Laptop SO-DIMM</span><span data-i18n="footer.shop3">Server ECC</span></div>
-      <div><h5 data-i18n="footer.supportHeader">Support</h5><span data-i18n="footer.support1">Shipping (none)</span><span data-i18n="footer.support2">Returns (unnecessary)</span><span data-i18n="footer.support3">Warranty (eternal)</span></div>
+      <div><h5 data-i18n="footer.legalHeader">Legal</h5><a href="#/terms" data-i18n="footer.legal1">Store Rules</a><a href="#/privacy" data-i18n="footer.legal2">Privacy Policy</a><a href="mailto:contact@ramnevercomes.com">contact@ramnevercomes.com</a></div>
     </div>
     <div class="foot-bottom">
-      <p class="disclaimer" data-i18n="footer.disclaimer">rambuy is a fictional store. Nothing will be shipped. No payment is ever taken — there is no payment step at all. This site has no server.</p>
+      <p class="disclaimer" data-i18n="footer.disclaimer">RamNeverComes is a fictional store. Nothing will be shipped. No payment is ever taken — there is no payment step at all. This site has no server.</p>
       <p class="disclaimer" data-i18n="footer.privacy">Game progress is stored only in your browser (localStorage). Nothing is ever sent anywhere.</p>
       <p class="disclaimer" data-i18n="footer.aiImages">Product images are AI-generated — the products don't exist, and neither do their photos.</p>
     </div>
   </footer>
 
+  <div id="burger-root"></div>
+  <button id="to-top" data-icon="arrow-up" data-i18n-aria="nav.toTopAria" onclick="scrollTopFast()"></button>
   <div id="toast-root"></div>
   <div id="overlay-root"></div>
   <div id="feed-root"></div>

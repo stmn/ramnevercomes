@@ -783,16 +783,30 @@ const STAGE_TIMES = [0, 70, 180, 340, 480, 600];
 
 const PROMO_CODES = { 'PATIENCE40': 0.40 };
 
-const FEED_CITIES = ['Seoul', 'Busan', 'Warsaw', 'Berlin', 'Tokyo', 'Austin', 'London', 'Kraków', 'Taipei', 'Toronto', 'Amsterdam', 'Incheon'];
+const FEED_CITIES = [
+  'Warszawa', 'München', '東京', 'Praha', '서울', 'Москва', 'بغداد', 'São Paulo', 'Bogotá', 'Paris', 'Madrid', 'Roma', 'Lisboa', 'Amsterdam', 'Brussel', 'Wien', 'Zürich', 'Stockholm', 'Oslo', 'København', 'Helsinki', 'Αθήνα', 'Київ', 'Budapest', 'București', 'София', 'Београд', 'Zagreb', 'İstanbul', '北京', 'दिल्ली', 'กรุงเทพมหานคร', 'Hà Nội', 'Jakarta', 'Kuala Lumpur', 'Maynila', 'تهران', 'الرياض', 'القاهرة', 'ירושלים', 'دبي', 'Ciudad de México', 'Buenos Aires', 'Santiago', 'Lima', 'New York', 'Montréal', 'Sydney', 'Auckland', 'Johannesburg', 'Lagos', 'Nairobi', 'الدار البيضاء', 'አዲስ አበባ', 'Baile Átha Cliath', 'Reykjavík', 'Bratislava', 'Ljubljana', 'Vilnius', 'Rīga', 'Tallinn', 'Мінск', 'თბილისი', 'Երևան', 'Алматы', 'Toshkent', 'کراچی', 'ঢাকা', 'කොළඹ', 'काठमाडौँ', 'ရန်ကုန်', 'ភ្នំពេញ', 'Singapore', '臺北', 'Улаанбаатар', 'عمّان', 'بيروت', 'دمشق', 'الدوحة', 'الكويت', 'تونس', 'الجزائر', 'Accra', 'Dar es Salaam', 'Kampala', 'Dakar', 'Abidjan', 'La Habana', 'Caracas', 'Quito', 'La Paz', 'Montevideo', 'Asunción', 'Ciudad de Guatemala', 'San José', 'Panamá', 'Santo Domingo', 'Lëtzebuerg', 'Valletta', 'Λευκωσία',
+];
 
 // Deterministically assigned to products by index; dates rendered relative to "now".
-const REVIEW_POOL = [
-  { name: 'Minjun K.', stars: 5, days: 3,  text: 'Ordered within minutes of the restock. The checkout was the smoothest I have experienced this year.' },
-  { name: 'Anna W.',   stars: 5, days: 6,  text: 'Exactly the capacity I have been trying to buy since spring. The order confirmation alone was worth it.' },
-  { name: 'Tomás R.',  stars: 4, days: 9,  text: 'Great specs for the price. Tracking updates are frequent and reassuring. Still waiting for delivery.' },
-  { name: 'Yuki S.',   stars: 5, days: 12, text: 'My third kit this month. The purchase experience is consistently excellent every single time.' },
-  { name: 'David L.',  stars: 5, days: 15, text: 'Finally a store where this kit is actually in stock. Ordering took under a minute.' },
-  { name: 'Ola N.',    stars: 4, days: 19, text: 'Clean listing, honest stock counts, instant confirmation email feeling. Courier seems thorough.' },
-  { name: 'Chris B.',  stars: 5, days: 22, text: 'I check the tracking page every morning with my coffee. Highly recommend this kit.' },
-  { name: 'Hana P.',   stars: 5, days: 26, text: 'Bought one for me and one as a gift. Both orders confirmed instantly. Wonderful.' },
+const RV_META = [
+  { name: 'Minjun K.', stars: 5, days: 2 },   { name: 'Anna W.', stars: 5, days: 3 },
+  { name: 'Tomás R.', stars: 4, days: 5 },    { name: 'Yuki S.', stars: 5, days: 6 },
+  { name: 'David L.', stars: 5, days: 7 },    { name: 'Ola N.', stars: 4, days: 8 },
+  { name: 'Chris B.', stars: 5, days: 9 },    { name: 'Hana P.', stars: 5, days: 11 },
+  { name: 'Marco V.', stars: 5, days: 12 },   { name: 'Priya D.', stars: 5, days: 13 },
+  { name: 'Jonas F.', stars: 4, days: 14 },   { name: 'Elif A.', stars: 5, days: 16 },
+  { name: 'Sam T.', stars: 5, days: 17 },     { name: 'Ingrid H.', stars: 5, days: 18 },
+  { name: 'Mateusz G.', stars: 5, days: 19 }, { name: 'Chloé M.', stars: 4, days: 21 },
+  { name: 'Ravi P.', stars: 5, days: 22 },    { name: 'Sofia C.', stars: 5, days: 23 },
+  { name: 'Ben O.', stars: 5, days: 24 },     { name: 'Aiko T.', stars: 5, days: 26 },
+  { name: 'Lucas M.', stars: 4, days: 27 },   { name: 'Freja L.', stars: 5, days: 28 },
+  { name: 'Diego S.', stars: 5, days: 29 },   { name: 'Nadia K.', stars: 5, days: 31 },
+  { name: 'Ethan W.', stars: 5, days: 32 },   { name: 'Zofia B.', stars: 4, days: 33 },
+  { name: 'Hyun-woo J.', stars: 5, days: 34 },{ name: 'Marta P.', stars: 5, days: 36 },
+  { name: 'Oscar E.', stars: 5, days: 37 },   { name: 'Léa D.', stars: 5, days: 38 },
+  { name: 'Piotr S.', stars: 4, days: 39 },   { name: 'Mei L.', stars: 5, days: 41 },
+  { name: 'Jack R.', stars: 5, days: 42 },    { name: 'Amara O.', stars: 5, days: 43 },
+  { name: 'Felix N.', stars: 5, days: 44 },   { name: 'Carmen R.', stars: 4, days: 46 },
+  { name: 'Taro Y.', stars: 5, days: 47 },    { name: 'Julia H.', stars: 5, days: 48 },
+  { name: 'Omar F.', stars: 5, days: 51 },    { name: 'Vera S.', stars: 5, days: 54 },
 ];

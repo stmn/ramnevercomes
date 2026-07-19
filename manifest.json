@@ -1,7 +1,7 @@
 {
-  "name": "rambuy — fictional memory store",
-  "short_name": "rambuy",
-  "description": "Buy the DDR5 the world is waiting for. Nothing will be shipped. No payment is ever taken.",
+  "name": "RamNeverComes",
+  "short_name": "RamNeverComes",
+  "description": "Buy the DDR5 the world is waiting for. The RAM never comes: nothing will be shipped, no payment is ever taken.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -1,4 +1,4 @@
-/* rambuy — fully client-side fictional store. No backend beyond static files. */
+/* RamNeverComes — fully client-side fictional store. No backend beyond static files. */
 /* ---------- i18n ----------
    All user-facing strings live in lang/<code>.json. English is the default
    and the fallback for missing keys. */
@@ -18,7 +18,17 @@ const LANGS = [
 ];
 const LOCALES = { en: 'en-US', pl: 'pl-PL', fr: 'fr-FR', es: 'es-ES', pt: 'pt-PT', 'pt-br': 'pt-BR', de: 'de-DE', it: 'it-IT', zh: 'zh-CN', ja: 'ja-JP', ko: 'ko-KR' };
 let I18N = {}, I18N_EN = {};
-const curLang = () => localStorage.getItem(LANG_KEY) || 'en';
+function detectLang() {
+  for (const raw of navigator.languages || [navigator.language || 'en']) {
+    const l = raw.toLowerCase();
+    if (LANGS.some(x => x.code === l)) return l;
+    const base = l.split('-')[0];
+    if (base === 'pt') return 'pt'; // pt-br złapane wyżej pełnym kodem
+    if (LANGS.some(x => x.code === base)) return base;
+  }
+  return 'en';
+}
+const curLang = () => localStorage.getItem(LANG_KEY) || detectLang();
 const curLocale = () => LOCALES[curLang()] || 'en-US';
 
 async function loadLang() {
@@ -91,7 +101,7 @@ const product = id => PRODUCTS.find(p => p.id === id);
 const bagCount = bag => Object.values(bag).reduce((a, b) => a + b, 0);
 
 
-// Codes must be EARNED (wheel, scratch card, queue, streak) and are one-time
+// Codes must be EARNED (wheel, scratch card, queue) and are one-time
 // use — placing an order consumes the code from your wallet.
 const CODES_KEY = 'rambuy.codes';
 const loadCodes = () => JSON.parse(localStorage.getItem(CODES_KEY) || '[]');
@@ -109,6 +119,7 @@ function consumeCode(code) {
 function promoRate(code) {
   if (!code) return 0;
   if (PROMO_CODES[code]) return PROMO_CODES[code];
+  // STREAK zostaje w regexie tylko po to, by wcześniej zdobyte kody STREAK25 dalej działały
   const earned = code.match(/^(LUCKY|STREAK)(\d{1,2})$/);
   if (earned) return Math.min(50, Math.max(5, +earned[2])) / 100;
   return 0;
@@ -191,6 +202,17 @@ function sndSuccess() {
     [523, 659, 784].forEach((f, i) => note(f, audioCtx.currentTime + i * 0.09, 0.22, 0.07));
   } catch (e) { /* audio unavailable */ }
 }
+// Reveal shimmer: low pad + rising arpeggio, sparkles timed to the card shine (~0.45s).
+function sndReveal() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = audioCtx.currentTime;
+    note(262, t0, 0.8, 0.035);
+    [523, 659, 784, 1047].forEach((f, i) => note(f, t0 + 0.06 + i * 0.085, 0.32, 0.055));
+    note(1319, t0 + 0.46, 0.16, 0.045);
+    note(1568, t0 + 0.55, 0.2, 0.04);
+  } catch (e) { /* audio unavailable */ }
+}
 
 /* ---------- shared ui ---------- */
 function updateBagBadge(pop = false) {
@@ -201,13 +223,22 @@ function updateBagBadge(pop = false) {
   if (pop) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
 }
 
+function dismissToast(el) {
+  if (!el || !el.isConnected || el.classList.contains('leaving')) return;
+  el.classList.add('leaving');
+  setTimeout(() => el.remove(), 320);
+}
+
 function toast(msg, iconName = 'check') {
   const root = document.getElementById('toast-root');
+  // Maksymalnie 3 na ekranie: nowy wypycha najstarszy natychmiast.
+  const live = [...root.children].filter(el => !el.classList.contains('leaving'));
+  if (live.length >= 3) dismissToast(live[0]);
   const el = document.createElement('div');
   el.className = 'toast';
   el.innerHTML = `${icon(iconName, 15)}${msg}`;
   root.appendChild(el);
-  setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 320); }, 2200);
+  setTimeout(() => dismissToast(el), 2200);
 }
 
 function starsHtml(p) {
@@ -633,10 +664,10 @@ function bindPriceChart(p) {
 /* ---------- reviews ---------- */
 function seededReviews(p) {
   const base = hashStr(p.id);
-  return [0, 1, 2].map(i => {
-    const idx = (base + i * 7) % REVIEW_POOL.length;
-    return { ...REVIEW_POOL[idx], text: t('rvpool.' + idx) };
-  });
+  return [0, 1, 2, 3, 4].map(i => {
+    const m = RV_META[(base + i * 11) % RV_META.length];
+    return { ...m, text: t('rv.' + p.id + '.' + (i + 1)) };
+  }).sort((a, b) => a.days - b.days);
 }
 function reviewsHtml(p) {
   const mine = (loadReviews()[p.id] || []);
@@ -934,6 +965,12 @@ function updateHero() {
   if (img && !img.src.endsWith(show.img)) img.src = show.img;
   const hint = document.getElementById('hero-hint-name');
   if (hint && hint.textContent !== show.name) hint.textContent = show.name;
+  const title = document.getElementById('hero-title');
+  if (title && title.textContent !== show.name) {
+    title.textContent = show.name;
+    const lead = document.getElementById('hero-lead');
+    if (lead) lead.textContent = descOf(show);
+  }
   const key = (featureUnlocked('herobuy') ? 'u:' : 'l' + xpInfo().lvl + ':') + (pick
     ? pick.id + ':' + (loadBag()[pick.id] || 0)
     : 'none:' + fmtRP(rpBal));
@@ -953,14 +990,15 @@ function homeView() {
     <section class="hero">
       <div class="hero-txt">
         <span class="eyebrow">${icon('zap', 12)} ${t('hero.eyebrow')}</span>
-        <h1>${t('hero.title')}</h1>
-        <p class="lead">${t('hero.lead')}</p>
+        <h1 id="hero-title">${(heroPickKit() || RP_LADDER[0]).name}</h1>
+        <p class="lead" id="hero-lead">${descOf(heroPickKit() || RP_LADDER[0])}</p>
         <div class="cta-row">
           <span id="hero-buy">${heroBuyHtml(heroPickKit())}</span>
           <a class="btn ghost" href="#/kits">${t('hero.browse')} ${icon('chevron-right', 14)}</a>
         </div>
       </div>
       <div class="hero-img"><img src="${(heroPickKit() || RP_LADDER[0]).img}" alt="${t('hero.clickAlt')}" id="main-clicker" draggable="false" onclick="mainClick(event)" title="${t('hero.clickTitle')}">
+        ${(loadStats().clicks || 0) ? '' : `<div class="hero-click-cue" id="hero-click-cue">${icon('mouse-pointer-click', 14)} ${t('hero.clickCue')}</div>`}
         <div class="hero-hint">${icon('mouse-pointer-click', 13)} <span id="hero-hint-name">${(heroPickKit() || RP_LADDER[0]).name}</span>&nbsp;${t('hero.hint')}</div>
       </div>
     </section>
@@ -1401,7 +1439,7 @@ function shareKit(id) {
   const p = product(id);
   const url = location.origin + location.pathname + '#/product/' + id;
   if (navigator.share) {
-    navigator.share({ title: `${p.name} — rambuy`, text: `${p.name} · +${fmtRP(p.rpProd)} RP/s`, url }).catch(() => {});
+    navigator.share({ title: `${p.name} — RamNeverComes`, text: `${p.name} · +${fmtRP(p.rpProd)} RP/s`, url }).catch(() => {});
   } else {
     navigator.clipboard.writeText(url).then(
       () => toast(t('pdp.shareCopied'), 'share-2'),
@@ -1466,6 +1504,19 @@ function updateCourier(order) {
   done.style.strokeDashoffset = mainLen * (1 - p);
   courier.style.transform = `translate(${pt.x}px, ${pt.y}px)`;
   courier.classList.toggle('arrived', p >= 1);
+  // Mobile: mapa jest szersza niz ekran - podazaj kadrem za kurierem,
+  // chyba ze user wlasnie przesuwa mape palcem.
+  const wrap = courier.closest('.map-wrap');
+  if (wrap && wrap.scrollWidth > wrap.clientWidth + 4) {
+    if (!wrap.dataset.panBound) {
+      wrap.dataset.panBound = '1';
+      wrap.addEventListener('touchstart', () => { wrap.dataset.hold = Date.now(); }, { passive: true });
+    }
+    if (!wrap.dataset.hold || Date.now() - +wrap.dataset.hold > 4000) {
+      const scale = wrap.scrollWidth / 640;
+      wrap.scrollTo({ left: Math.max(0, pt.x * scale - wrap.clientWidth / 2), behavior: 'smooth' });
+    }
+  }
 }
 
 function orderView(id) {
@@ -1651,6 +1702,32 @@ function notFoundView() {
   </div></div>`;
 }
 
+const legalContact = () =>
+  `<p class="legal-contact">${t('legal.contact', { email: '<a href="mailto:contact@ramnevercomes.com">contact@ramnevercomes.com</a>' })}</p>`;
+
+function termsView() {
+  const rules = [1, 2, 3, 4, 5, 6, 7].map(i => `<li>${t('legal.terms.r' + i)}</li>`).join('');
+  return `
+  <div class="page legal-page">
+    <h1>${t('legal.terms.title')}</h1>
+    <p class="legal-intro">${t('legal.terms.intro')}</p>
+    <ol class="legal-list">${rules}</ol>
+    ${legalContact()}
+  </div>`;
+}
+
+function privacyView() {
+  const secs = [1, 2, 3, 4].map(i =>
+    `<h4>${t('legal.privacy.s' + i + 't')}</h4><p>${t('legal.privacy.s' + i + 'b')}</p>`).join('');
+  return `
+  <div class="page legal-page">
+    <h1>${t('legal.privacy.title')}</h1>
+    <p class="legal-intro">${t('legal.privacy.intro')}</p>
+    ${secs}
+    ${legalContact()}
+  </div>`;
+}
+
 
 /* ---------- RP economy core (incremental engine) ---------- */
 const RP_KEY = 'rambuy.rp';
@@ -1725,7 +1802,8 @@ function cheat(code) {
     localStorage.setItem(REVEAL_KEY, String(RP_LADDER.length));
     toast(t('toast.cheat'), 'sparkles');
     renderRoute();
-    return `all ${RP_LADDER.length} kits revealed (resets with Clear progress)`;
+    tickNavBadges();
+    return `all ${RP_LADDER.length} kits + all features unlocked (resets with Clear progress)`;
   }
   return `unknown cheat: ${code}`;
 }
@@ -1736,8 +1814,13 @@ function checkReveals() {
   if (n > seen) {
     localStorage.setItem(REVEAL_KEY, String(n));
     if (seen > 0) {
-      sndPop();
-      toast(t('toast.newKit', { name: RP_LADDER[n - 1].name }), 'sparkles');
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        sndPop();
+        toast(t('toast.newKit', { name: RP_LADDER[n - 1].name }), 'sparkles');
+      } else {
+        sndReveal();
+        revealCinematic(RP_LADDER[n - 1], n - seen - 1);
+      }
     }
   }
   if (n === RP_LADDER.length && !localStorage.getItem('rambuy.allkits')) {
@@ -1757,6 +1840,74 @@ function checkReveals() {
   }
 }
 
+
+/* ---------- burger menu (mobile) ---------- */
+function toggleBurger(e) {
+  e?.stopPropagation();
+  const root = document.getElementById('burger-root');
+  if (root.innerHTML) { closeBurger(); return; }
+  const items = [
+    ['nav.kits', '#/kits', null],
+    ['nav.discover', '#/discover', 'discover'],
+    ['nav.mystery', '#/mystery', 'mystery'],
+    ['nav.spin', '#/spin', 'spin'],
+    ['nav.market', '#/market', 'market'],
+    ['nav.orders', '#/orders', null],
+    ['nav.profile', '#/profile', null],
+  ].map(([key, href, feat]) => {
+    const locked = feat && !featureUnlocked(feat);
+    return locked
+      ? `<button class="bm-item locked" onclick="toast(t('nav.unlocksAt', { lvl: FEATURE_LVL['${feat}'], cur: xpInfo().lvl }), 'lock')">${t(key)} ${icon('lock', 13)}</button>`
+      : `<a class="bm-item" href="${href}">${t(key)} ${icon('chevron-right', 14)}</a>`;
+  }).join('');
+  root.innerHTML = `
+    <div class="burger-veil" onclick="closeBurger()"></div>
+    <aside class="burger-drawer">
+      <div class="bm-head"><b data-icon="memory-stick">RamNeverComes</b>
+        <button class="theme-btn" onclick="closeBurger()">${icon('x', 18)}</button></div>
+      ${items}
+    </aside>`;
+  hydrateIcons(root);
+}
+function closeBurger() {
+  const root = document.getElementById('burger-root');
+  const drawer = root.querySelector('.burger-drawer');
+  if (!drawer) return;
+  drawer.classList.add('closing');
+  root.querySelector('.burger-veil').classList.add('closing');
+  setTimeout(() => { root.innerHTML = ''; }, 250);
+}
+
+/* ---------- kit reveal cinematic ---------- */
+let revealTimer = null;
+function revealCinematic(p, extra) {
+  const old = document.getElementById('kit-reveal');
+  if (old) old.remove();
+  clearTimeout(revealTimer);
+  const el = document.createElement('div');
+  el.id = 'kit-reveal';
+  el.innerHTML = `
+    <div class="kr-card" onclick="closeKitReveal('#/product/${p.id}')">
+      <div class="kr-glow"></div>
+      ${[...Array(8)].map((_, i) => `<i class="kr-spark s${i}"></i>`).join('')}
+      <div class="kr-img"><img src="${p.img}" alt="${p.name}" draggable="false"></div>
+      <span class="kr-eyebrow">${icon('sparkles', 12)} ${t('reveal.eyebrow')}</span>
+      <b class="kr-name">${p.name}</b>
+      ${extra > 0 ? `<span class="kr-more">${t('reveal.more', { n: extra })}</span>` : ''}
+    </div>`;
+  el.addEventListener('click', e => { if (e.target === el) closeKitReveal(); });
+  document.body.appendChild(el);
+  revealTimer = setTimeout(() => closeKitReveal(), 3200);
+}
+function closeKitReveal(href) {
+  const el = document.getElementById('kit-reveal');
+  if (!el) return;
+  clearTimeout(revealTimer);
+  el.classList.add('kr-out');
+  setTimeout(() => el.remove(), 350);
+  if (href) location.hash = href;
+}
+
 /* ---------- main clicker ---------- */
 let frenzyUntil = 0;
 function clickValue() {
@@ -1767,6 +1918,8 @@ function mainClick(e) {
   comboN = now - comboLast < 700 ? comboN + 1 : 1;
   comboLast = now;
   bumpStat('clicks');
+  const cue = document.getElementById('hero-click-cue');
+  if (cue) { cue.classList.add('gone'); setTimeout(() => cue.remove(), 400); }
   const crit = Math.random() < 0.05;
   const v = Math.max(1, Math.round(clickValue() * (crit ? 10 : 1)));
   addXp(v);
@@ -1934,8 +2087,7 @@ function lifetimeStats() {
   const kits = Object.values(ownedCounts(true)).reduce((a, b) => a + b, 0);
   const pulls = loadGacha();
   const st = loadStats();
-  const streak = JSON.parse(localStorage.getItem(STREAK_KEY) || '{}').count || 0;
-  return { orders: orders.length, gb: gbOwned(), spent, codeSaved, boost, kits, pulls, st, streak };
+  return { orders: orders.length, gb: gbOwned(), spent, codeSaved, boost, kits, pulls, st };
 }
 
 function profileView() {
@@ -1956,7 +2108,6 @@ function profileView() {
         <p>${t('profile.member', { date: new Date(since).toLocaleDateString(curLocale(), { month: 'long', day: 'numeric', year: 'numeric' }), amount: fmtRP(xp) })}</p>
         <div class="p-chips">
           <span class="p-chip">${icon('sparkles', 12)} ${t('profile.level', { n: lvl })}</span>
-          <span class="p-chip">${icon('flame', 12)} ${t('profile.streakChip', { n: L.streak })}</span>
           <span class="p-chip">${icon('trophy', 12)} ${t('profile.achChip', { n: ach.unlockedCount, total: ACHIEVEMENTS.length })}</span>
         </div>
       </div>
@@ -1984,7 +2135,6 @@ function profileView() {
       ${tile('ticket', fmtRP(L.codeSaved) + ' RP', t('profile.tile.codes'))}
       ${tile('zap', L.boost.toLocaleString(curLocale()) + ' BP', t('profile.tile.boost'))}
       ${tile('gift', L.pulls.length, t('profile.tile.cases'), legend ? t('case.legendaryCount', { n: legend }) : t('profile.tile.casesNone'))}
-      ${tile('flame', plural(L.streak, 'profile.day', 'profile.days'), t('profile.tile.streak'), t('profile.tile.streakSmall'))}
       ${tile('arrow-right-left', (L.st.trades || 0).toLocaleString(curLocale()), t('profile.tile.trades'), signedRp(L.st.tradeNet || 0))}
     </div>
     <div class="sec-head" style="padding-top:34px"><h2>${t('profile.ach.title')}</h2>
@@ -2012,12 +2162,11 @@ function clearProgress(btn) {
     }, 4000);
     return;
   }
-  [ORDERS_KEY, GACHA_KEY, STATS_KEY, STREAK_KEY, WHEEL_KEY, PROMO_KEY, SEEN_KEY, CODES_KEY, REVEAL_KEY, DISCOVER_KEY, CASE_KEY, CHEAT_KEY, BP_KEY, IBOK_KEY, ACH_KEY, MARKET_KEY, 'rambuy.lvlseen', 'rambuy.allkits'].forEach(k => localStorage.removeItem(k));
+  [ORDERS_KEY, GACHA_KEY, STATS_KEY, 'rambuy.streak', WHEEL_KEY, PROMO_KEY, SEEN_KEY, CODES_KEY, REVEAL_KEY, DISCOVER_KEY, CASE_KEY, CHEAT_KEY, BP_KEY, IBOK_KEY, ACH_KEY, MARKET_KEY, 'rambuy.lvlseen', 'rambuy.allkits'].forEach(k => localStorage.removeItem(k));
   sessionStorage.removeItem(QUEUE_KEY);
   rpBal = 128;
   saveRp();
   updateXpChip();
-  initStreak();
   toast(t('profile.clearedToast'), 'rotate-ccw');
   renderRoute();
 }
@@ -2067,7 +2216,6 @@ const caseReadyIn = () => {
   return Math.max(0, (st.ts || 0) + CASE_COOLDOWN - Date.now());
 };
 
-const REEL_TILE_STEP = 164; // 152px tile + 12px gap
 const REEL_WIN_IDX = 46;
 
 function rollRarity() {
@@ -2117,8 +2265,12 @@ function openCase() {
 
   const reel = document.getElementById('case-reel');
   const wrapW = reel.parentElement.clientWidth;
-  const jitter = (Math.random() - 0.5) * 70;
-  const target = REEL_WIN_IDX * REEL_TILE_STEP + 76 - wrapW / 2 + jitter;
+  // Krok mierzony z DOM: responsywny CSS moze zmienic szerokosc kafelka,
+  // a sztywna stala rozjezdzala taśmę z iglą (pusta taśma na mobile).
+  const tileW = reel.firstElementChild.getBoundingClientRect().width || 152;
+  const step = tileW + (parseFloat(getComputedStyle(reel).columnGap) || 12);
+  const jitter = (Math.random() - 0.5) * Math.min(70, tileW * 0.45);
+  const target = REEL_WIN_IDX * step + tileW / 2 - wrapW / 2 + jitter;
   const DUR = 5800;
 
   requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -2126,7 +2278,7 @@ function openCase() {
     reel.style.transform = `translateX(${-target}px)`;
   }));
   // Tick as tiles cross the needle — dense early, sparse at the end.
-  const passes = Math.round(target / REEL_TILE_STEP);
+  const passes = Math.round(target / step);
   for (let k = 1; k <= passes; k++) {
     const t = DUR * (1 - Math.pow(1 - k / passes, 1 / 3));
     setTimeout(() => sndTick(200), t);
@@ -2733,7 +2885,8 @@ function bindScratch(order) {
   ctx.fillStyle = '#8e939c';
   ctx.font = '600 15px -apple-system, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(t('scratch.hint'), SCRATCH_W / 2, SCRATCH_H / 2 + 5);
+  ctx.textBaseline = 'middle';
+  ctx.fillText(t('scratch.hint'), SCRATCH_W / 2, SCRATCH_H / 2);
 
   let scratching = false, cleared = false;
   const scratch = e => {
@@ -2765,34 +2918,6 @@ function bindScratch(order) {
   cv.addEventListener('pointerup', () => { scratching = false; checkDone(); });
 }
 
-/* ---------- daily streak ---------- */
-const STREAK_KEY = 'rambuy.streak';
-function initStreak() {
-  const today = todayStr();
-  const s = JSON.parse(localStorage.getItem(STREAK_KEY) || '{}');
-  if (s.last !== today) {
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-    s.count = s.last === yesterday ? (s.count || 0) + 1 : 1;
-    s.last = today;
-    localStorage.setItem(STREAK_KEY, JSON.stringify(s));
-    const grant = Math.max(20, Math.round(cps() * 600));
-    setTimeout(() => addXp(grant, t('toast.streakDay', { n: s.count })), 2400);
-    const st = loadStats();
-    if ((st.maxStreak || 0) < s.count) { st.maxStreak = s.count; saveStats(st); }
-    if (s.count > 0 && s.count % 7 === 0) setTimeout(() => {
-      confetti(); sndSuccess(); grantCode('STREAK25');
-      toast(t('toast.streak7', { n: s.count }), 'flame');
-    }, 1600);
-  }
-  const chip = document.getElementById('streak-chip');
-  if (chip) {
-    chip.hidden = (s.count || 0) < 2;
-    chip.innerHTML = `${icon('flame', 13)} ${s.count}`;
-    chip.title = t('nav.streakTip', { n: s.count });
-  }
-}
-
-
 /* ---------- achievements ---------- */
 const ACH_KEY = 'rambuy.ach';
 const SINCE_KEY = 'rambuy.since';
@@ -2821,7 +2946,6 @@ const ACHIEVEMENTS = [
   { id: 'scout', icon: 'heart', tiers: [50, 500, 5000], value: () => loadStats().swipes || 0 },
   { id: 'patient', icon: 'hourglass', tiers: [1], value: () => (loadCodes().includes('PATIENCE40') || loadOrders().some(o => o.promo === 'PATIENCE40')) ? 1 : 0 },
   { id: 'coupons', icon: 'ticket', tiers: [1, 10, 50], value: () => loadOrders().filter(o => o.promo).length },
-  { id: 'streak', icon: 'flame', tiers: [3, 7, 30], value: () => loadStats().maxStreak || 0 },
   { id: 'golden', icon: 'gift', tiers: [1, 10, 50], value: () => loadStats().golden || 0 },
   { id: 'critic', icon: 'star', tiers: [1, 5, 20], value: () => Object.values(loadReviews()).reduce((a, l) => a + l.length, 0) },
   { id: 'night', icon: 'moon', tiers: [1], value: () => loadStats().nightOrders || 0 },
@@ -2906,7 +3030,7 @@ function closeUnlockModal() {
   document.getElementById('overlay-root').innerHTML = '';
   if (unlockQueue.length) showUnlockModal(unlockQueue.shift());
 }
-const featureUnlocked = k => xpInfo().lvl >= FEATURE_LVL[k];
+const featureUnlocked = k => localStorage.getItem(CHEAT_KEY) === 'unlockall' || xpInfo().lvl >= FEATURE_LVL[k];
 
 function lockedFeatureView(k) {
   return `
@@ -2963,6 +3087,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbo
 
 /* ---------- router ---------- */
 function renderRoute() {
+  closeBurger();
   viewTimers.forEach(clearInterval);
   viewTimers = [];
   const hash = location.hash || '#/';
@@ -2981,6 +3106,8 @@ function renderRoute() {
   else if (parts[0] === 'spin') html = featureUnlocked('spin') ? spinView() : lockedFeatureView('spin');
   else if (parts[0] === 'market') html = featureUnlocked('market') ? marketView() : lockedFeatureView('market');
   else if (parts[0] === 'profile') html = profileView();
+  else if (parts[0] === 'terms') html = termsView();
+  else if (parts[0] === 'privacy') html = privacyView();
   else html = notFoundView();
 
   $view.innerHTML = html;
@@ -3029,6 +3156,14 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 window.addEventListener('hashchange', renderRoute);
+window.addEventListener('scroll', () => {
+  document.getElementById('to-top')?.classList.toggle('show', window.scrollY > 700);
+}, { passive: true });
+window.scrollTopFast = function () {
+  // dlugie strony: skok w poblize gory + krotki smooth zamiast wielosekundowej animacji
+  if (window.scrollY > 800) window.scrollTo(0, 800);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 hydrateIcons();
 updateBagBadge();
 // Migration: the wheel used to grant WHEEL* codes; they no longer exist.
@@ -3036,7 +3171,6 @@ localStorage.setItem(CODES_KEY, JSON.stringify(loadCodes().filter(c => !c.starts
 if (!localStorage.getItem(SINCE_KEY)) localStorage.setItem(SINCE_KEY, String(Date.now()));
 await loadLang();
 hydrateStatic();
-initStreak();
 updateXpChip();
 tickNavBadges();
 setTimeout(() => checkAchievements(!localStorage.getItem(ACH_KEY)), 2500);

@@ -1,4 +1,4 @@
-const CACHE = 'rambuy-v63';
+const CACHE = 'rambuy-v69';
 const ASSETS = [
   './',
   './index.html',
@@ -84,7 +84,12 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // cache: 'reload' omija cache HTTP przeglądarki - Cloudflare daje .js/.css max-age=4h,
+  // a .json/.html zawsze świeże; bez tego addAll potrafi zmieszać stary app.js z nowymi
+  // plikami językowymi w jednym cache (objaw: gołe klucze i18n, np. "rvpool.1")
+  e.waitUntil(caches.open(CACHE)
+    .then(c => c.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
