@@ -1,4 +1,4 @@
-const CACHE = 'rambuy-v69';
+const CACHE = 'rambuy-v70';
 const ASSETS = [
   './',
   './index.html',
