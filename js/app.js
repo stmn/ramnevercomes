@@ -2415,6 +2415,21 @@ const discoverNextIn = () => {
 };
 function discoverReward() { return Math.max(5, Math.round(cps() * 5)); }
 
+// Widok Odkrywaj na zywo: bez tego licznik ladunkow i ekran "wroc za X min"
+// aktualizowaly sie dopiero po ponownym wejsciu, mimo ze regeneracja szla.
+function tickDiscover() {
+  const st = discoverState();
+  const empty = document.querySelector('.discover-page') === null;
+  if (empty) {
+    if (st.charges > 0) { renderRoute(); return; }
+    const p = document.querySelector('.empty-state p');
+    if (p) p.textContent = t('disc.done.sub', { m: Math.ceil(discoverNextIn() / 60000) });
+    return;
+  }
+  const leftEl = document.getElementById('disc-left');
+  if (leftEl && String(st.charges) !== leftEl.textContent) leftEl.textContent = st.charges;
+}
+
 function discoverView() {
   const left0 = discoverState().charges;
   if (left0 === 0) {
@@ -3278,7 +3293,10 @@ function renderRoute() {
     const ord = loadOrders().find(o => o.id === parts[1]);
     if (ord && !ord.scratched) bindScratch(ord);
   }
-  if (parts[0] === 'discover') renderDeck();
+  if (parts[0] === 'discover') {
+    renderDeck();
+    viewTimers.push(setInterval(tickDiscover, 1000));
+  }
   if (parts[0] === 'product') {
     const p = product(parts[1]);
     if (p) { startPdpLive(p); bindPriceChart(p); rvStars = 5; }
