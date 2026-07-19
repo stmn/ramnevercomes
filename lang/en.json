@@ -408,6 +408,7 @@
   "profile.tile.trades": "Trades closed",
   "spin.hubWait": "{s}s",
   "footer.legalHeader": "Legal",
+  "footer.about": "About",
   "footer.legal1": "Store Rules",
   "footer.legal2": "Privacy Policy",
   "legal.contact": "Questions, feedback, existential doubts: {email}. A real inbox, read by a real human.",
@@ -742,5 +743,15 @@
   "case.premium.name": "Premium Case",
   "case.black.name": "Black Case",
   "case.stats": "Avg. return {ev}% · win chance {win}%",
-  "case.locked": "Discover {n} ladder kits to open"
+  "case.locked": "Discover {n} ladder kits to open",
+  "about.title": "About RamNeverComes",
+  "about.intro": "The whole story of a store that never delivers - and why that is exactly the point.",
+  "about.s1t": "What is this?",
+  "about.s1b": "RamNeverComes is a parody of a premium DDR5 memory store and, underneath, a full idle game. You browse kits, place orders, watch the courier get closer - and nothing ever arrives. The numbers, however, genuinely go up.",
+  "about.s2t": "Is anything here real?",
+  "about.s2b": "No. The products are invented, their photos are AI-generated, the prices are fantasy and the reviews were written by very enthusiastic fictional customers. There is no payment step - this store could not take your money even by accident.",
+  "about.s3t": "How do I play?",
+  "about.s3b": "Click the kit on the home page to earn RP, buy kits - once 'delivered' they produce RP forever. Leveling up unlocks the wheel, scouting, mystery cases and the RAMX exchange. Progress lives only in your browser (localStorage); there is no server and nothing is ever sent anywhere.",
+  "about.s4t": "Why does this exist?",
+  "about.s4b": "Because DDR5 prices already made owning memory feel like fiction. We just made it official - here everyone can finally afford the very best kits."
 }

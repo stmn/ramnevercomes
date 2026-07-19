@@ -408,6 +408,7 @@
   "profile.tile.trades": "Zamknięte transakcje",
   "spin.hubWait": "{s}s",
   "footer.legalHeader": "Informacje",
+  "footer.about": "O stronie",
   "footer.legal1": "Regulamin",
   "footer.legal2": "Polityka prywatności",
   "legal.contact": "Pytania, uwagi, wątpliwości egzystencjalne: {email}. Prawdziwa skrzynka, czytana przez prawdziwego człowieka.",
@@ -742,5 +743,15 @@
   "case.premium.name": "Skrzynka Premium",
   "case.black.name": "Czarna Skrzynka",
   "case.stats": "Średni zwrot {ev}% · szansa zysku {win}%",
-  "case.locked": "Odkryj {n} kitów drabinki, aby otworzyć"
+  "case.locked": "Odkryj {n} kitów drabinki, aby otworzyć",
+  "about.title": "O RamNeverComes",
+  "about.intro": "Cała historia sklepu, który nigdy nie dostarcza - i dlaczego właśnie o to chodzi.",
+  "about.s1t": "Co to w ogóle jest?",
+  "about.s1b": "RamNeverComes to parodia ekskluzywnego sklepu z pamięciami DDR5, a pod spodem - pełnoprawna gra idle. Przeglądasz zestawy, składasz zamówienia, patrzysz jak kurier się zbliża - i nic nigdy nie dociera. Liczby jednak naprawdę rosną.",
+  "about.s2t": "Czy cokolwiek tu jest prawdziwe?",
+  "about.s2b": "Nie. Produkty są wymyślone, ich zdjęcia wygenerowała AI, ceny to fantazja, a recenzje napisali bardzo entuzjastyczni fikcyjni klienci. Nie ma kroku płatności - ten sklep nie umiałby wziąć twoich pieniędzy nawet przez przypadek.",
+  "about.s3t": "Jak grać?",
+  "about.s3b": "Klikaj kość na stronie głównej, żeby zarabiać RP, kupuj zestawy - po 'dostarczeniu' produkują RP na zawsze. Kolejne poziomy odblokowują koło, zwiad, skrzynki i giełdę RAMX. Postęp żyje tylko w twojej przeglądarce (localStorage); nie ma serwera i nic nigdzie nie jest wysyłane.",
+  "about.s4t": "Po co to istnieje?",
+  "about.s4b": "Bo przy cenach DDR5 posiadanie pamięci i tak brzmiało jak fikcja. My tylko nadaliśmy temu oficjalny status - tutaj każdego stać wreszcie na najlepsze zestawy."
 }

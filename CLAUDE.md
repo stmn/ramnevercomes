@@ -2,7 +2,8 @@
 
 Fikcyjny sklep DDR5 - nic nie jest wysyłane, nie ma płatności, wszystko dzieje się w przeglądarce (localStorage). Statyczny frontend bez backendu.
 
-- Build: `node build.mjs` (wynik w `dist/`)
+- Build: `node build.mjs` (wynik w `dist/`; generuje też 59 statycznych stron `/product/<id>/index.html` - pełny shell aplikacji z podmienionymi meta i prerenderem treści przez współdzielony `js/seo-render.js` - oraz `sitemap.xml` i `_redirects`)
+- Routing: History API (`/product/sakura`, bez hashy). Stare linki `#/x` przepisywane w locie. `<base href="/">` w index.html jest OBOWIĄZKOWY (względne ścieżki assets/lang/js pod głębokimi trasami). Nawigacja w kodzie: `go('/trasa')`, nie `location.hash`. Cloudflare Pages: `_redirects` (`/* /index.html 200`) daje fallback SPA; lokalnie głębokie wejścia testować przez `npx wrangler pages dev dist` (rambuy.test serwuje źródła bez fallbacku - wejście od `/` działa, refresh na podstronie da 404)
 - Deploy: `./deploy.sh` (Cloudflare Pages, projekt `ramnevercomes`) - TYLKO na jawne polecenie
 - i18n: `lang/<code>.json`, 11 języków: en, pl, fr, es, pt, pt-br, de, it, zh, ja, ko; angielski jest fallbackiem dla brakujących kluczy
 - Przy zmianach plików statycznych bumpnąć `CACHE` w `sw.js` (rambuy-vNN), inaczej powracający użytkownicy nie zobaczą zmian

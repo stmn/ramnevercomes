@@ -1,9 +1,10 @@
-const CACHE = 'rambuy-v72';
+const CACHE = 'rambuy-v73';
 const ASSETS = [
   './',
   './index.html',
   './css/styles.css',
   './js/icons.js',
+  './js/seo-render.js',
   './js/data.js',
   './js/app.js',
   './lang/en.json',
@@ -107,6 +108,10 @@ self.addEventListener('fetch', e => {
       const copy = res.clone();
       caches.open(CACHE).then(c => c.put(e.request, copy));
       return res;
+    }).catch(err => {
+      // Trasy History API (np. /spin) offline: podaj shell aplikacji.
+      if (e.request.mode === 'navigate') return caches.match('./index.html');
+      throw err;
     }))
   );
 });

@@ -23,7 +23,7 @@ trap 'rm -rf "$STAGE"' EXIT
 cp -R dist/ "$STAGE/"
 rsync -a --exclude 'originals' assets/ "$STAGE/assets/"
 KEY=$(cat indexnow-key.txt)
-cp robots.txt sitemap.xml "$KEY.txt" "$STAGE/"
+cp robots.txt "$KEY.txt" "$STAGE/"  # sitemap.xml generuje build.mjs do dist/
 
 npx wrangler pages deploy "$STAGE" --project-name=ramnevercomes --branch=main
 

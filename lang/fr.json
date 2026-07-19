@@ -408,6 +408,7 @@
   "profile.tile.trades": "Trades clôturés",
   "spin.hubWait": "{s}s",
   "footer.legalHeader": "Légal",
+  "footer.about": "À propos",
   "footer.legal1": "Règlement",
   "footer.legal2": "Politique de confidentialité",
   "legal.contact": "Questions, remarques, doutes existentiels : {email}. Une vraie boîte mail, lue par un vrai humain.",
@@ -742,5 +743,15 @@
   "case.premium.name": "Caisse Premium",
   "case.black.name": "Caisse Noire",
   "case.stats": "Retour moyen {ev} % · chance de gain {win} %",
-  "case.locked": "Découvrez {n} kits de l'échelle pour ouvrir"
+  "case.locked": "Découvrez {n} kits de l'échelle pour ouvrir",
+  "about.title": "À propos de RamNeverComes",
+  "about.intro": "Toute l'histoire d'une boutique qui ne livre jamais - et pourquoi c'est exactement le but.",
+  "about.s1t": "C'est quoi, au juste ?",
+  "about.s1b": "RamNeverComes est une parodie de boutique premium de mémoire DDR5 et, en dessous, un vrai jeu idle. Vous parcourez les kits, passez commande, regardez le livreur approcher - et rien n'arrive jamais. Les chiffres, eux, montent vraiment.",
+  "about.s2t": "Quelque chose est-il réel ici ?",
+  "about.s2b": "Non. Les produits sont inventés, leurs photos générées par IA, les prix relèvent du fantasme et les avis ont été écrits par des clients fictifs très enthousiastes. Il n'y a aucune étape de paiement - cette boutique ne pourrait pas prendre votre argent, même par accident.",
+  "about.s3t": "Comment jouer ?",
+  "about.s3b": "Cliquez sur le kit de la page d'accueil pour gagner des RP, achetez des kits - une fois « livrés », ils produisent des RP pour toujours. Monter de niveau débloque la roue, le repérage, les caisses et la bourse RAMX. La progression vit uniquement dans votre navigateur (localStorage) ; il n'y a pas de serveur et rien n'est jamais envoyé nulle part.",
+  "about.s4t": "Pourquoi ça existe ?",
+  "about.s4b": "Parce qu'avec les prix de la DDR5, posséder de la mémoire relevait déjà de la fiction. Nous l'avons juste rendu officiel - ici, tout le monde peut enfin s'offrir les meilleurs kits."
 }

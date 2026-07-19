@@ -408,6 +408,7 @@
   "profile.tile.trades": "Abgeschlossene Trades",
   "spin.hubWait": "{s}s",
   "footer.legalHeader": "Rechtliches",
+  "footer.about": "Über uns",
   "footer.legal1": "Shop-Regeln",
   "footer.legal2": "Datenschutzerklärung",
   "legal.contact": "Fragen, Feedback, existenzielle Zweifel: {email}. Ein echtes Postfach, gelesen von einem echten Menschen.",
@@ -742,5 +743,15 @@
   "case.premium.name": "Premium-Case",
   "case.black.name": "Schwarzes Case",
   "case.stats": "Ø Rückzahlung {ev} % · Gewinnchance {win} %",
-  "case.locked": "Entdecke {n} Kits der Leiter, um zu öffnen"
+  "case.locked": "Entdecke {n} Kits der Leiter, um zu öffnen",
+  "about.title": "Über RamNeverComes",
+  "about.intro": "Die ganze Geschichte eines Shops, der nie liefert - und warum genau das der Punkt ist.",
+  "about.s1t": "Was ist das hier?",
+  "about.s1b": "RamNeverComes ist die Parodie eines Premium-Shops für DDR5-Speicher und darunter ein vollwertiges Idle-Game. Du stöberst durch Kits, bestellst, siehst den Kurier näherkommen - und nichts kommt jemals an. Die Zahlen aber steigen wirklich.",
+  "about.s2t": "Ist hier irgendetwas echt?",
+  "about.s2b": "Nein. Die Produkte sind erfunden, ihre Fotos KI-generiert, die Preise Fantasie und die Bewertungen stammen von sehr begeisterten fiktiven Kunden. Es gibt keinen Bezahlschritt - dieser Shop könnte dein Geld nicht mal aus Versehen nehmen.",
+  "about.s3t": "Wie spielt man?",
+  "about.s3b": "Klick das Kit auf der Startseite, um RP zu verdienen, und kauf Kits - einmal 'geliefert' produzieren sie für immer RP. Mit jedem Level schaltest du Rad, Scouting, Cases und die RAMX-Börse frei. Der Fortschritt lebt nur in deinem Browser (localStorage); es gibt keinen Server und nichts wird je irgendwohin gesendet.",
+  "about.s4t": "Warum gibt es das?",
+  "about.s4b": "Weil sich Speicherbesitz bei den DDR5-Preisen ohnehin schon wie Fiktion anfühlte. Wir haben es nur offiziell gemacht - hier kann sich endlich jeder die besten Kits leisten."
 }

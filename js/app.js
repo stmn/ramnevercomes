@@ -151,7 +151,7 @@ function lineCost(id, q) {
 }
 
 /* ---------- deterministic rng ---------- */
-function hashStr(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+// hashStr: przeniesiony do js/seo-render.js (wspoldzielony z buildem SEO)
 function mulberry32(seed) {
   return () => {
     seed |= 0; seed = seed + 0x6D2B79F5 | 0;
@@ -239,9 +239,8 @@ function toast(msg, iconName = 'check') {
   setTimeout(() => dismissToast(el), 2200);
 }
 
-function starsHtml(p) {
-  return `<div class="stars">${icon('star', 13)} ${p.rating} <em>(${p.reviews.toLocaleString(curLocale())} ${t('reviewsWord')})</em></div>`;
-}
+const seoCtx = () => ({ t, icon, locale: curLocale() });
+const starsHtml = p => starsLineHtml(p, seoCtx());
 
 // Allocation grows with loyalty: base stock + half of the copies you own.
 function stockOf(p) {
@@ -277,7 +276,7 @@ function scheduleFeed(delay) {
 }
 function fireFeed() {
   if (!document.hidden && !document.querySelector('.overlay')) {
-    const viewedId = (location.hash.match(/^#\/product\/(.+)$/) || [])[1];
+    const viewedId = (routePath().match(/^\/product\/(.+)$/) || [])[1];
     const pool = RP_LADDER.filter(isRevealed);
     const p = Math.random() < 0.25 && product(viewedId)
       ? product(viewedId)
@@ -352,7 +351,7 @@ function renderMiniBag() {
     </div>
     <div class="mb-total"><span>${t('mb.total')}</span><span>${fmtRP(pr.total)} RP</span></div>
     <div class="mb-actions">
-      <a class="btn ghost" href="#/bag" onclick="hideMiniBag()">${icon('shopping-bag', 13)} ${t('mb.checkout')}</a>
+      <a class="btn ghost" href="/bag" onclick="hideMiniBag()">${icon('shopping-bag', 13)} ${t('mb.checkout')}</a>
       ${!instantPopoverUnlocked()
         ? `<span data-tip="${t('mb.instantLockTip')}"><button class="btn" disabled style="pointer-events:none">${icon('lock', 13)} ${t('mb.instant')}</button></span>`
         : rpBal >= pr.total
@@ -639,33 +638,19 @@ function bindPriceChart(p) {
 }
 
 /* ---------- reviews ---------- */
-function seededReviews(p) {
-  const base = hashStr(p.id);
-  return [0, 1, 2, 3, 4].map(i => {
-    const m = RV_META[(base + i * 11) % RV_META.length];
-    return { ...m, text: t('rv.' + p.id + '.' + (i + 1)) };
-  }).sort((a, b) => a.days - b.days);
-}
+const seededReviews = p => seededReviewsFor(p, RV_META, t);
 function reviewsHtml(p) {
   const mine = (loadReviews()[p.id] || []);
   const rows = [
     ...mine.map(r => ({ ...r, date: new Date(r.ts).toLocaleDateString(curLocale()) })),
     ...seededReviews(p).map(r => ({ ...r, date: t('rv.daysAgo', { n: r.days }) })),
-  ].map(r => `
-    <div class="review">
-      <div class="rv-head">
-        <b>${r.name}</b>
-        <span class="rv-stars">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</span>
-        <span class="rv-verified">${icon('check', 10)} ${t('rv.verified')}</span>
-        <span class="rv-date">${r.date}</span>
-      </div>
-      <p>${r.text}</p>
-    </div>`).join('');
+  ];
+  const rowsHtml = reviewRowsHtml(rows, seoCtx());
 
   return `
   <section class="reviews">
     <h3>${t('rv.title')}</h3>
-    ${rows}
+    ${rowsHtml}
     <div class="rv-form">
       <h4>${t('rv.write')}</h4>
       <div class="rv-star-pick" id="rv-stars">
@@ -706,7 +691,7 @@ function productCard(p) {
         <img src="${p.img}" alt="${p.name}" loading="lazy">
         <span class="zoom-hint">${icon('zoom-in', 20)}</span>
       </div>
-      <a href="#/product/${p.id}">
+      <a href="/product/${p.id}">
         <h4>${p.name}</h4>
         <div class="sub">${p.sub}</div>
         <div class="price"${(ownedCounts(true)[p.id] || 0) ? ` data-tip="${t('card.nextCopyTip', { n: ownedCounts(true)[p.id] })}"` : ''}>${fmtRP(rpUnitCost(p))} RP</div>
@@ -876,7 +861,7 @@ function homeView() {
         <p class="lead" id="hero-lead">${descOf(heroPickKit() || RP_LADDER[0])}</p>
         <div class="cta-row">
           <span id="hero-buy">${heroBuyHtml(heroPickKit())}</span>
-          <a class="btn ghost" href="#/kits">${t('hero.browse')} ${icon('chevron-right', 14)}</a>
+          <a class="btn ghost" href="/kits">${t('hero.browse')} ${icon('chevron-right', 14)}</a>
         </div>
       </div>
       <div class="hero-img"><img src="${(heroPickKit() || RP_LADDER[0]).img}" alt="${t('hero.clickAlt')}" id="main-clicker" draggable="false" onclick="mainClick(event)" title="${t('hero.clickTitle')}">
@@ -909,26 +894,15 @@ function productView(id) {
   const preview = !isRevealed(p);
   return `
   <div class="page">
-    <a class="crumb" href="#/">${icon('chevron-left', 14)} ${t('pdp.allMemory')}</a>
+    <a class="crumb" href="/">${icon('chevron-left', 14)} ${t('pdp.allMemory')}</a>
     <div class="pdp">
-      <div class="pdp-img"><img src="${p.img}" alt="${p.name}"></div>
-      <div class="pdp-info">
-        <h1>${p.name}
-          <button class="share-btn" onclick="shareKit('${p.id}')" data-tip="${t('pdp.shareTip')}">${icon('share-2', 15)}</button>
-        </h1>
-        <div class="sub">${p.sub}</div>
-        ${starsHtml(p)}
-        ${preview ? `<div class="preview-note">${icon('lock', 13)} ${t('pdp.previewNote', { amount: fmtRP(p.rpCost * 8) })}</div>` : ''}
-        <div class="viewers" id="pdp-viewers"></div>
-        <p class="desc">${descOf(p)}</p>
-        <table class="spec-table">
-          <tr><td>${t('pdp.speed')}</td><td>${p.speed}</td></tr>
-          <tr><td>${t('pdp.latency')}</td><td>${p.latency}</td></tr>
-          <tr><td>${t('pdp.voltage')}</td><td>${p.voltage}</td></tr>
-          <tr><td>${t('pdp.profile')}</td><td>${p.profile}</td></tr>
-          <tr><td>${t('pdp.warranty')}</td><td>${t('pdp.lifetime')}</td></tr>
-        </table>
-        ${preview ? '' : `<div class="buy-box">
+      ${pdpCoreHtml(p, { ...seoCtx(), extras: {
+        titleExtra: `
+          <button class="share-btn" onclick="shareKit('${p.id}')" data-tip="${t('pdp.shareTip')}">${icon('share-2', 15)}</button>`,
+        afterStars: `${preview ? `<div class="preview-note">${icon('lock', 13)} ${t('pdp.previewNote', { amount: fmtRP(p.rpCost * 8) })}</div>` : ''}
+        <div class="viewers" id="pdp-viewers"></div>`,
+        desc: descOf(p),
+        afterSpecs: `${preview ? '' : `<div class="buy-box">
           <div class="price-row"><span class="price">${fmtRP(rpUnitCost(p))} RP</span></div>
           <div class="prod-line" style="margin-bottom:6px">${t('pdp.prodLine', { n: fmtRP(p.rpProd) })}${(ownedCounts(true)[p.id] || 0) ? ` · ${t('pdp.youOwn', { n: ownedCounts(true)[p.id] })}` : ''}</div>
           <span id="pdp-stock">${stockHtml(p)}</span>
@@ -942,8 +916,7 @@ function productView(id) {
           ${addBtnHtml(p, true)}
           <div class="ship-hint">${icon('truck', 14)} ${t('pdp.shipHint')}</div>
         </div>`}
-        ${priceChartHtml()}
-      </div>
+        ${priceChartHtml()}` } })}
     </div>
     ${reviewsHtml(p)}
   </div>`;
@@ -1004,7 +977,7 @@ function bagView() {
       ${icon('shopping-bag', 44)}
       <h3>${t('bag.empty.title')}</h3>
       <p>${t('bag.empty.sub')}</p>
-      <a class="btn" href="#/">${t('bag.empty.cta')}</a>
+      <a class="btn" href="/">${t('bag.empty.cta')}</a>
     </div></div>`;
   }
   const pr = pricing(bag);
@@ -1012,7 +985,7 @@ function bagView() {
     const p = product(id), q = bag[id];
     return `
     <div class="bag-item">
-      <a href="#/product/${id}"><img src="${p.img}" alt="${p.name}"></a>
+      <a href="/product/${id}"><img src="${p.img}" alt="${p.name}"></a>
       <div class="bi-info">
         <h4>${p.name}</h4>
         <div class="sub">${p.sub}</div>
@@ -1093,7 +1066,7 @@ function placeOrder() {
     localStorage.removeItem(PROMO_KEY);
     dbg('order', { total: pr.total, promo: pr.promo || '-', disc: pr.discount || 0 });
     overlay.innerHTML = '';
-    location.hash = '#/order/' + order.id;
+    go('/order/' + order.id);
     confetti();
     sndSuccess();
   }, 1300);
@@ -1325,7 +1298,7 @@ function doInstantBuy(id) {
 
 function shareKit(id) {
   const p = product(id);
-  const url = location.origin + location.pathname + '#/product/' + id;
+  const url = location.origin + '/product/' + id;
   if (navigator.share) {
     navigator.share({ title: `${p.name} - RamNeverComes`, text: `${p.name} · +${fmtRP(p.rpProd)} RP/s`, url }).catch(() => {});
   } else {
@@ -1518,7 +1491,7 @@ function ordersView() {
       ${icon('receipt', 44)}
       <h3>${t('orders.empty.title')}</h3>
       <p>${t('orders.empty.sub')}</p>
-      <a class="btn" href="#/">${t('orders.empty.cta')}</a>
+      <a class="btn" href="/">${t('orders.empty.cta')}</a>
     </div></div>`;
   }
   const saved = orders.reduce((s, o) => s + o.total, 0);
@@ -1527,7 +1500,7 @@ function ordersView() {
     const s = TRACKING_STAGES[stage];
     const n = o.items.reduce((a, it) => a + it.qty, 0);
     return `
-    <a class="order-card" href="#/order/${o.id}">
+    <a class="order-card" href="/order/${o.id}">
       <div class="oc-icon">${icon('package', 20)}</div>
       <div class="oc-info">
         <h4>${o.id}</h4>
@@ -1552,7 +1525,7 @@ function notFoundView() {
     ${icon('search', 44)}
     <h3>${t('nf.title')}</h3>
     <p>${t('nf.sub')}</p>
-    <a class="btn" href="#/">${t('nf.cta')}</a>
+    <a class="btn" href="/">${t('nf.cta')}</a>
   </div></div>`;
 }
 
@@ -1566,6 +1539,18 @@ function termsView() {
     <h1>${t('legal.terms.title')}</h1>
     <p class="legal-intro">${t('legal.terms.intro')}</p>
     <ol class="legal-list">${rules}</ol>
+    ${legalContact()}
+  </div>`;
+}
+
+function aboutView() {
+  const secs = [1, 2, 3, 4].map(i =>
+    `<h4>${t('about.s' + i + 't')}</h4><p>${t('about.s' + i + 'b')}</p>`).join('');
+  return `
+  <div class="page legal-page">
+    <h1>${t('about.title')}</h1>
+    <p class="legal-intro">${t('about.intro')}</p>
+    ${secs}
     ${legalContact()}
   </div>`;
 }
@@ -1695,7 +1680,7 @@ function checkReveals() {
       });
       dbgLastRevealTs = Date.now();
       // Odswiez drabinke od razu (bez przeladowania), jesli jest na ekranie.
-      const route = (location.hash || '#/').replace(/^#\//, '').split('/')[0];
+      const route = routePath().replace(/^\//, '').split('/')[0];
       if (route === '' || route === 'kits') {
         keepScrollY = window.scrollY;
         renderRoute();
@@ -1883,7 +1868,7 @@ function closeKitReveal(href) {
   clearTimeout(revealTimer);
   el.classList.add('kr-out');
   setTimeout(() => el.remove(), 350);
-  if (href) location.hash = href;
+  if (href) go(href);
 }
 
 /* ---------- main clicker ---------- */
@@ -2181,7 +2166,7 @@ function mysteryView() {
       <div class="coll-grid">
         ${pulls.map(x => {
           const p = product(x.id);
-          return `<a class="coll-item ${x.rarity}" href="#/product/${p.id}"><img src="${p.img}" alt="${p.name}"><small>${p.name}</small></a>`;
+          return `<a class="coll-item ${x.rarity}" href="/product/${p.id}"><img src="${p.img}" alt="${p.name}"><small>${p.name}</small></a>`;
         }).join('')}
       </div>
     </div>` : '';
@@ -2412,7 +2397,7 @@ function discoverView() {
       ${icon('thumbs-up', 44)}
       <h3>${t('disc.done.title')}</h3>
       <p>${t('disc.done.sub', { m: Math.ceil(discoverNextIn() / 60000) })}</p>
-      <a class="btn" href="#/">${t('disc.done.cta')}</a>
+      <a class="btn" href="/">${t('disc.done.cta')}</a>
     </div></div>`;
   }
   deckOrder = RP_LADDER.filter(isRevealed).sort(() => Math.random() - 0.5);
@@ -3159,7 +3144,7 @@ function achievementsHtml() {
 /* ---------- feature level gates ---------- */
 const FEATURE_LVL = { spin: 5, discover: 10, mystery: 15, market: 20, herobuy: 25 };
 const FEATURE_ICON = { spin: 'rotate-ccw', market: 'chart-line', discover: 'heart', mystery: 'gift', herobuy: 'shopping-bag' };
-const FEATURE_ROUTE = { spin: '#/spin', market: '#/market', discover: '#/discover', mystery: '#/mystery', herobuy: '#/' };
+const FEATURE_ROUTE = { spin: '/spin', market: '/market', discover: '/discover', mystery: '/mystery', herobuy: '/' };
 
 let unlockQueue = [];
 function showUnlockModal(k) {
@@ -3173,7 +3158,7 @@ function showUnlockModal(k) {
       <p>${t('feat.' + k + '.desc')}</p>
       <div class="um-actions">
         <button class="btn ghost" onclick="closeUnlockModal()">${t('modal.later')}</button>
-        <button class="btn" onclick="closeUnlockModal(); location.hash = '${FEATURE_ROUTE[k]}'">${t('modal.tryNow')}</button>
+        <button class="btn" onclick="closeUnlockModal(); go('${FEATURE_ROUTE[k]}')">${t('modal.tryNow')}</button>
       </div>
     </div></div>`;
 }
@@ -3189,7 +3174,7 @@ function lockedFeatureView(k) {
     ${icon('lock', 44)}
     <h3>${t('modal.locked.title', { name: t('feat.' + k + '.name'), lvl: FEATURE_LVL[k] })}</h3>
     <p>${t('modal.locked.sub', { cur: xpInfo().lvl })}</p>
-    <a class="btn" href="#/">${t('modal.locked.cta')}</a>
+    <a class="btn" href="/">${t('modal.locked.cta')}</a>
   </div></div>`;
 }
 
@@ -3237,12 +3222,22 @@ function closeLightbox() {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
 
 /* ---------- router ---------- */
+// Routing na History API: /product/sakura zamiast #/product/sakura.
+// Stare linki hashowe sa przepisywane w miejscu (kompatybilnosc wsteczna).
+function routePath() {
+  if (location.hash.startsWith('#/')) history.replaceState({}, '', location.hash.slice(1));
+  return decodeURIComponent(location.pathname).replace(/\/+$/, '') || '/';
+}
+function go(path) {
+  if (path.startsWith('#')) path = path.slice(1);
+  if (routePath() !== path) history.pushState({}, '', path);
+  renderRoute();
+}
 function renderRoute() {
   closeBurger();
   viewTimers.forEach(clearInterval);
   viewTimers = [];
-  const hash = location.hash || '#/';
-  const parts = hash.replace(/^#\//, '').split('/');
+  const parts = routePath().replace(/^\//, '').split('/');
 
   let html;
   if (parts[0] === '' || parts[0] === 'kits') html = homeView();
@@ -3255,6 +3250,7 @@ function renderRoute() {
   else if (parts[0] === 'spin') html = featureUnlocked('spin') ? spinView() : lockedFeatureView('spin');
   else if (parts[0] === 'market') html = featureUnlocked('market') ? marketView() : lockedFeatureView('market');
   else if (parts[0] === 'profile') html = profileView();
+  else if (parts[0] === 'about') html = aboutView();
   else if (parts[0] === 'terms') html = termsView();
   else if (parts[0] === 'privacy') html = privacyView();
   else html = notFoundView();
@@ -3309,7 +3305,19 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   }
 }
 
-window.addEventListener('hashchange', renderRoute);
+window.addEventListener('popstate', renderRoute);
+// Delegacja: wewnetrzne linki nawiguja przez History API (bez reloadu).
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[href^="/"]');
+  if (!a || a.origin !== location.origin || a.target || a.hasAttribute('download')) return;
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+  e.preventDefault();
+  go(a.pathname);
+});
+// Kompatybilnosc: stare linki/cheaty ustawiajace #/trase dzialaja dalej.
+window.addEventListener('hashchange', () => {
+  if (location.hash.startsWith('#/')) renderRoute();
+});
 dbgHud();
 window.addEventListener('scroll', () => {
   document.getElementById('to-top')?.classList.toggle('show', window.scrollY > 700);

@@ -408,6 +408,7 @@
   "profile.tile.trades": "Trades fechados",
   "spin.hubWait": "{s}s",
   "footer.legalHeader": "Legal",
+  "footer.about": "Sobre",
   "footer.legal1": "Regulamento da loja",
   "footer.legal2": "Política de privacidade",
   "legal.contact": "Perguntas, comentários, dúvidas existenciais: {email}. Uma caixa de correio real, lida por um humano real.",
@@ -742,5 +743,15 @@
   "case.premium.name": "Caixa Premium",
   "case.black.name": "Caixa Preta",
   "case.stats": "Retorno médio {ev}% · hipótese de ganho {win}%",
-  "case.locked": "Descobre {n} kits da escada para abrir"
+  "case.locked": "Descobre {n} kits da escada para abrir",
+  "about.title": "Sobre a RamNeverComes",
+  "about.intro": "A história completa de uma loja que nunca entrega - e porque é exatamente essa a ideia.",
+  "about.s1t": "O que é isto?",
+  "about.s1b": "A RamNeverComes é uma paródia de uma loja premium de memória DDR5 e, por baixo, um verdadeiro jogo idle. Vês kits, fazes encomendas, observas o estafeta a aproximar-se - e nada chega nunca. Os números, esses, sobem mesmo.",
+  "about.s2t": "Há aqui alguma coisa real?",
+  "about.s2b": "Não. Os produtos são inventados, as fotos foram geradas por IA, os preços são fantasia e as avaliações foram escritas por clientes fictícios muito entusiasmados. Não há passo de pagamento - esta loja não conseguiria ficar com o teu dinheiro nem por acidente.",
+  "about.s3t": "Como se joga?",
+  "about.s3b": "Clica no kit da página inicial para ganhar RP e compra kits - depois de 'entregues' produzem RP para sempre. Subir de nível desbloqueia a roleta, o reconhecimento, as caixas e a bolsa RAMX. O progresso vive apenas no teu navegador (localStorage); não há servidor e nada é enviado para lado nenhum.",
+  "about.s4t": "Porque é que isto existe?",
+  "about.s4b": "Porque com os preços da DDR5, ter memória já soava a ficção. Nós só tornámos isso oficial - aqui toda a gente pode finalmente pagar os melhores kits."
 }

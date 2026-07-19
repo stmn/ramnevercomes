@@ -408,6 +408,7 @@
   "profile.tile.trades": "已平仓交易",
   "spin.hubWait": "{s}秒",
   "footer.legalHeader": "法律信息",
+  "footer.about": "关于",
   "footer.legal1": "商店规则",
   "footer.legal2": "隐私政策",
   "legal.contact": "疑问、反馈、存在主义困惑:{email}。真实的邮箱,由真人阅读。",
@@ -742,5 +743,15 @@
   "case.premium.name": "高级箱",
   "case.black.name": "黑箱",
   "case.stats": "平均回报 {ev}% · 获利概率 {win}%",
-  "case.locked": "发现 {n} 款套装后可开启"
+  "case.locked": "发现 {n} 款套装后可开启",
+  "about.title": "关于 RamNeverComes",
+  "about.intro": "一家永远不发货的商店的完整故事--而这正是它的意义所在。",
+  "about.s1t": "这是什么？",
+  "about.s1b": "RamNeverComes 是对高端 DDR5 内存商店的恶搞，骨子里则是一个完整的放置游戏。你浏览套装、下单、看着快递员越来越近--然后什么都不会送到。不过，数字是真的在涨。",
+  "about.s2t": "这里有什么是真的吗？",
+  "about.s2b": "没有。产品是编的，照片是 AI 生成的，价格是幻想，评价出自一群热情过头的虚构顾客。这里没有支付环节--这家店就算想，也收不了你的钱。",
+  "about.s3t": "怎么玩？",
+  "about.s3b": "点击首页的内存模组赚取 RP，购买套装--一旦'送达'就会永久产出 RP。升级可解锁转盘、侦察、箱子和 RAMX 交易所。进度只保存在你的浏览器里（localStorage）；没有服务器，任何数据都不会被发送到任何地方。",
+  "about.s4t": "为什么会有这个网站？",
+  "about.s4b": "因为按 DDR5 的价格，拥有内存本来就像是虚构的事。我们只是把它变成了官方设定--在这里，人人终于都买得起最好的套装。"
 }
