@@ -1059,6 +1059,7 @@ function placeOrder() {
     const hour = new Date().getHours();
     if (hour < 4) bumpStat('nightOrders');
     const orders = loadOrders();
+    maybeAutoScratch(order);
     orders.unshift(order);
     saveOrders(orders);
     saveBag({});
@@ -1287,6 +1288,7 @@ function doInstantBuy(id) {
     name: 'friend', city: 'Your address',
   };
   if (new Date().getHours() < 4) bumpStat('nightOrders');
+  maybeAutoScratch(order);
   const orders = loadOrders();
   orders.unshift(order);
   saveOrders(orders);
@@ -2164,10 +2166,20 @@ function mysteryView() {
     <div class="collection">
       <h3>${plural(pulls.length, 'case.collection', 'case.collectionPlural')}${legend ? ` · ${t('case.legendaryCount', { n: legend })}` : ''}</h3>
       <div class="coll-grid">
-        ${pulls.map(x => {
-          const p = product(x.id);
-          return `<a class="coll-item ${x.rarity}" href="/product/${p.id}"><img src="${p.img}" alt="${p.name}"><small>${p.name}</small></a>`;
-        }).join('')}
+        ${(() => {
+          // Powtorki zgrupowane: jeden kafelek per kit z licznikiem xN
+          // (kolekcja rosla bez ograniczen przy czestym otwieraniu).
+          const grouped = [];
+          const seen = new Map();
+          pulls.forEach(x => {
+            if (seen.has(x.id)) seen.get(x.id).n++;
+            else { const e = { ...x, n: 1 }; seen.set(x.id, e); grouped.push(e); }
+          });
+          return grouped.map(x => {
+            const p = product(x.id);
+            return `<a class="coll-item ${x.rarity}" href="/product/${p.id}">${x.n > 1 ? `<i class="coll-count">x${x.n}</i>` : ''}<img src="${p.img}" alt="${p.name}"><small>${p.name}</small></a>`;
+          }).join('');
+        })()}
       </div>
     </div>` : '';
 
@@ -2967,6 +2979,18 @@ function sndLoss() {
 }
 
 /* ---------- scratch card (order page) ---------- */
+// Od poziomu instant buy (deliveredAt <= 1 s, ~lvl 30) zdrapki zdrapuja sie same:
+// kupon i XP naliczaja sie w momencie zlozenia zamowienia, a auto-apply
+// (domyslnie wlaczone po pierwszej zdrapce) doliczy kod do kolejnego zakupu.
+function maybeAutoScratch(order) {
+  if (!instantCardUnlocked() || order.scratched) return;
+  order.scratched = true;
+  const code = 'LUCKY' + (10 + hashStr(order.id) % 16);
+  grantCode(code);
+  dbg('scratch', { code, auto: 1 });
+  addXp(Math.max(30, Math.round(cps() * 15)), t('scratch.revealed'));
+}
+
 const SCRATCH_W = 400, SCRATCH_H = 128;
 
 function scratchHtml(order) {
@@ -3233,11 +3257,25 @@ function go(path) {
   if (routePath() !== path) history.pushState({}, '', path);
   renderRoute();
 }
+const BASE_TITLE = 'RamNeverComes - Memory. Finally within reach.';
+function routeTitle(parts) {
+  const key = {
+    kits: 'nav.kits', bag: 'bag.title', checkout: 'bag.title', orders: 'orders.title',
+    order: 'orders.title', mystery: 'case.title', discover: 'disc.title', spin: 'spin.title',
+    market: 'market.title', profile: 'nav.profile', about: 'about.title',
+    terms: 'legal.terms.title', privacy: 'legal.privacy.title',
+  }[parts[0]];
+  if (parts[0] === 'product') { const p = product(parts[1]); if (p) return p.name + ' - RamNeverComes'; }
+  if (!key) return BASE_TITLE;
+  const base = t(key);
+  return base.includes('RamNeverComes') ? base : base + ' - RamNeverComes';
+}
 function renderRoute() {
   closeBurger();
   viewTimers.forEach(clearInterval);
   viewTimers = [];
   const parts = routePath().replace(/^\//, '').split('/');
+  document.title = parts[0] === '' ? BASE_TITLE : routeTitle(parts);
 
   let html;
   if (parts[0] === '' || parts[0] === 'kits') html = homeView();
