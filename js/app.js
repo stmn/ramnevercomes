@@ -1,4 +1,4 @@
-/* RamNeverComes — fully client-side fictional store. No backend beyond static files. */
+/* RamNeverComes - fully client-side fictional store. No backend beyond static files. */
 /* ---------- i18n ----------
    All user-facing strings live in lang/<code>.json. English is the default
    and the fallback for missing keys. */
@@ -32,11 +32,13 @@ const curLang = () => localStorage.getItem(LANG_KEY) || detectLang();
 const curLocale = () => LOCALES[curLang()] || 'en-US';
 
 async function loadLang() {
-  try { I18N_EN = await fetch('lang/en.json').then(r => r.json()); } catch (e) { I18N_EN = {}; }
+  // Na hostach dev omijaj cache przegladarki - stare jsony pokazywaly surowe klucze.
+  const bust = (location.hostname === 'rambuy.test' || location.hostname === 'localhost') ? '?t=' + Date.now() : '';
+  try { I18N_EN = await fetch('lang/en.json' + bust).then(r => r.json()); } catch (e) { I18N_EN = {}; }
   const code = curLang();
   document.documentElement.lang = code;
   if (code === 'en') { I18N = I18N_EN; return; }
-  try { I18N = await fetch(`lang/${code}.json`).then(r => r.json()); } catch (e) { I18N = {}; }
+  try { I18N = await fetch(`lang/${code}.json` + bust).then(r => r.json()); } catch (e) { I18N = {}; }
 }
 
 function t(key, vars) {
@@ -80,9 +82,7 @@ const BAG_KEY = 'rambuy.bag';
 const ORDERS_KEY = 'rambuy.orders';
 const PROMO_KEY = 'rambuy.promo';
 const REVIEWS_KEY = 'rambuy.reviews';
-const COMPARE_KEY = 'rambuy.compare';
 const THEME_KEY = 'rambuy.theme';
-const QUEUE_KEY = 'rambuy.queue';
 let viewTimers = [];
 let viewTimersGlobalTick = null;
 let keepScrollY = null;
@@ -94,15 +94,13 @@ const loadOrders = () => JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]');
 const saveOrders = list => localStorage.setItem(ORDERS_KEY, JSON.stringify(list));
 const loadPromo = () => localStorage.getItem(PROMO_KEY) || '';
 const loadReviews = () => JSON.parse(localStorage.getItem(REVIEWS_KEY) || '{}');
-const loadCompare = () => JSON.parse(localStorage.getItem(COMPARE_KEY) || '[]');
-const saveCompare = l => localStorage.setItem(COMPARE_KEY, JSON.stringify(l));
 
 const product = id => PRODUCTS.find(p => p.id === id);
 const bagCount = bag => Object.values(bag).reduce((a, b) => a + b, 0);
 
 
-// Codes must be EARNED (wheel, scratch card, queue) and are one-time
-// use — placing an order consumes the code from your wallet.
+// Codes must be EARNED (scratch cards) and are one-time
+// use - placing an order consumes the code from your wallet.
 const CODES_KEY = 'rambuy.codes';
 const loadCodes = () => JSON.parse(localStorage.getItem(CODES_KEY) || '[]');
 function grantCode(code) {
@@ -296,7 +294,7 @@ function fireFeed() {
     setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 320); }, 5000);
     if (p.id === viewedId) liveStockDrop(p);
   }
-  scheduleFeed(14000 + Math.random() * 18000);
+  scheduleFeed(28000 + Math.random() * 36000);
 }
 
 /* ---------- live stock / viewers (product page) ---------- */
@@ -383,7 +381,7 @@ function toggleMiniBag(e) {
 }
 document.addEventListener('click', e => {
   const el = document.getElementById('mini-bag');
-  // The click that opened the popover bubbles here too — don't let it close it.
+  // The click that opened the popover bubbles here too - don't let it close it.
   if (Date.now() - miniBagShownAt < 150) return;
   if (!el.hidden && !el.contains(e.target)) hideMiniBag();
 });
@@ -510,31 +508,10 @@ function removePromo() {
   renderRoute();
 }
 
-/* ---------- compare ---------- */
-function toggleCompare(id) {
-  let list = loadCompare();
-  if (list.includes(id)) list = list.filter(x => x !== id);
-  else {
-    if (list.length >= 4) { toast(t('cmp.limit'), 'x'); return; }
-    list.push(id);
-  }
-  saveCompare(list);
-  renderCompareUi();
-}
-function renderCompareUi() {
-  const list = loadCompare();
-  document.querySelectorAll('.cmp-toggle').forEach(btn => {
-    btn.classList.toggle('on', list.includes(btn.dataset.cmp));
-  });
-  const root = document.getElementById('compare-root');
-  root.innerHTML = list.length >= 2
-    ? `<div class="compare-bar"><a class="btn" href="#/compare">${icon('arrow-right-left', 14)} ${t('cmp.bar', { n: list.length })}</a></div>`
-    : '';
-}
 
-/* ---------- price history — live, ever-rising ----------
+/* ---------- price history - live, ever-rising ----------
    Cosmetic FOMO chart: one tick = one fictional "day". The price mostly
-   climbs, sometimes stalls, occasionally dips a little — but always trends
+   climbs, sometimes stalls, occasionally dips a little - but always trends
    up. Resets on every page load; nothing is persisted. */
 const PC = { W: 560, H: 170, L: 46, R: 12, T: 12, B: 24, MAX: 90, TICK: 800 };
 let pcHist = [];
@@ -721,93 +698,10 @@ function rvSubmit(id) {
   renderRoute();
 }
 
-/* ---------- drop / queue ---------- */
-function dropBannerHtml() {
-  return `
-  <div class="drop-banner">
-    <div class="db-icon">${icon('ticket', 22)}</div>
-    <div class="db-txt">
-      <h4>${t('drop.title')}</h4>
-      <p>${t('drop.sub')}</p>
-    </div>
-    <a class="btn" href="#/drop">${t('drop.join')}</a>
-  </div>`;
-}
-
-function queueView() {
-  let q = JSON.parse(sessionStorage.getItem(QUEUE_KEY) || 'null');
-  if (!q) {
-    q = { ts: Date.now(), pos0: 3200 + Math.floor(Math.random() * 1900), behind0: 7400 + Math.floor(Math.random() * 3000) };
-    sessionStorage.setItem(QUEUE_KEY, JSON.stringify(q));
-  }
-  return `
-  <div class="page"><div class="queue-page">
-    <div class="q-icon">${icon('hourglass', 32)}</div>
-    <h1>${t('queue.title')}</h1>
-    <p class="q-sub">${t('queue.sub')}</p>
-    <div class="queue-pos" id="q-pos">—</div>
-    <div class="queue-pos-label">${t('queue.ahead')}</div>
-    <div class="queue-bar"><i id="q-bar" style="width:0%"></i></div>
-    <div class="queue-meta">
-      <span id="q-behind">${t('queue.behind', { n: '—' })}</span>
-      <span>${t('queue.wait')}</span>
-    </div>
-    <div id="q-reward"></div>
-    <a class="btn ghost" href="#/">${t('queue.leave')}</a>
-  </div></div>`;
-}
-
-const QUEUE_REWARD_AFTER = 90000; // ms spent at position 1 before the reward unlocks
-
-function renderQueueReward() {
-  const box = document.getElementById('q-reward');
-  if (!box || box.dataset.done) return;
-  box.dataset.done = '1';
-  box.innerHTML = `
-    <div class="queue-reward">
-      <div class="qr-icon">${icon('gift', 26)}</div>
-      <h3>${t('queue.reward.title')}</h3>
-      <p>${t('queue.reward.body')}</p>
-      <div class="qr-code">PATIENCE40</div>
-      <button class="btn" onclick="grantCode('PATIENCE40');applyPromo('PATIENCE40')">
-        ${icon('ticket', 14)} ${t('queue.reward.claim')}
-      </button>
-    </div>`;
-  hydrateIcons(box);
-}
-function tickQueue() {
-  const q = JSON.parse(sessionStorage.getItem(QUEUE_KEY) || 'null');
-  const posEl = document.getElementById('q-pos');
-  if (!q || !posEl) return;
-  const elapsed = (Date.now() - q.ts) / 1000;
-  // Fast exponential drop, then a slow grind of 1 person per ~8s —
-  // all the way down to 1. The last person ahead of you never leaves.
-  const base = Math.round(q.pos0 * Math.exp(-elapsed / 75)) - Math.floor(Math.max(0, elapsed - 300) / 8);
-  const pos = Math.max(1, base + (base > 10 ? Math.floor(Math.random() * 3) : 0));
-  posEl.textContent = pos.toLocaleString(curLocale());
-  document.getElementById('q-bar').style.width = Math.min(99, (1 - pos / q.pos0) * 100) + '%';
-  document.getElementById('q-behind').textContent =
-    t('queue.behind', { n: Math.round(q.behind0 + elapsed / 1.7).toLocaleString(curLocale()) });
-
-  // Waiting it out pays off: 90s stuck at position 1 unlocks a reward.
-  if (pos === 1 && !q.oneAt) { q.oneAt = Date.now(); sessionStorage.setItem(QUEUE_KEY, JSON.stringify(q)); }
-  if (q.oneAt && Date.now() - q.oneAt >= QUEUE_REWARD_AFTER) {
-    if (!q.rewarded) {
-      q.rewarded = true;
-      sessionStorage.setItem(QUEUE_KEY, JSON.stringify(q));
-      confetti();
-      sndSuccess();
-    }
-    renderQueueReward();
-  }
-}
-
 /* ---------- views ---------- */
-function productCard(p, cmp) {
+function productCard(p) {
   return `
     <div class="prod-card">
-      <button class="cmp-toggle ${cmp.includes(p.id) ? 'on' : ''}" data-cmp="${p.id}"
-              onclick="toggleCompare('${p.id}')" data-tip="${t('card.compareTip')}">${icon('arrow-right-left', 14)}</button>
       <div class="thumb-zoom" onclick="openLightbox('${p.img}')" title="${t('card.zoomTip')}">
         <img src="${p.img}" alt="${p.name}" loading="lazy">
         <span class="zoom-hint">${icon('zoom-in', 20)}</span>
@@ -820,20 +714,9 @@ function productCard(p, cmp) {
         ${cardMetaHtml(p)}
       </a>
       ${addBtnHtml(p)}
-      ${instantBtnHtml(p)}
     </div>`;
 }
 
-function instantBtnHtml(p) {
-  if (deliveredAt() <= 1) return '';
-  if (!instantCardUnlocked()) {
-    return `<span class="instant-lock" data-tip="${t('card.instantLockTip', { lvl: FEATURE_LVL.instant, cur: xpInfo().lvl })}">
-      <button class="btn ghost instant" disabled style="pointer-events:none">${icon('lock', 12)} ${t('card.instantBuy')}</button></span>`;
-  }
-  const can = rpBal >= rpUnitCost(p);
-  return `<button class="btn ghost instant" data-instant="${p.id}" ${can ? '' : 'disabled'}
-    onclick="instantBuy('${p.id}')" data-tip="${t('card.instantTip', { time: fmtDuration(deliveredAt()) })}">${icon('zap', 12)} ${t('card.instantBuy')} · <span data-ibeta>${fmtDuration(deliveredAt())}</span></button>`;
-}
 
 // 'ok' | 'out' (stock exhausted) | 'poor' (bag total + next copy exceeds balance)
 function addBtnState(p) {
@@ -867,7 +750,7 @@ function cardMetaHtml(p) {
 function addBtnHtml(p, big = false) {
   // At 1-second deliveries the bag is ceremony: the card's main button
   // becomes a one-click Instant buy.
-  if (!big && deliveredAt() <= 1 && instantCardUnlocked()) {
+  if (!big && instantCardUnlocked()) {
     const can = rpBal >= rpUnitCost(p);
     return `<button class="btn" data-instant="${p.id}" ${can ? '' : 'disabled'}
       onclick="instantBuy('${p.id}')">${icon('zap', 13)} ${t('card.instantBuy')}</button>`;
@@ -911,7 +794,7 @@ function refreshStockButtons() {
 
 function lockedCard(p) {
   return `
-    <div class="prod-card locked" data-tip="${t('ladder.locked.tip', { amount: fmtRP(p.rpCost * 0.5) })}">
+    <div class="prod-card locked">
       <div class="lock-img">
         <img src="assets/ram-mystery.webp" alt="${t('ladder.locked.sub')}" loading="lazy">
         <span class="lock-q">?</span>
@@ -919,7 +802,7 @@ function lockedCard(p) {
       <h4>${t('ladder.locked.name')}</h4>
       <div class="sub">${t('ladder.locked.sub')}</div>
       <div class="price">${fmtRP(p.rpCost)} RP</div>
-      <div class="lock-note">${icon('lock', 11)} ${t('ladder.locked.note', { amount: fmtRP(p.rpCost * 0.5) })}</div>
+      <div class="lock-note">${icon('lock', 11)} ${t('ladder.locked.note', { amount: fmtRP(p.rpCost * 8) })}</div>
     </div>`;
 }
 
@@ -931,7 +814,7 @@ function heroPickKit() {
   let pick = null;
   RP_LADDER.forEach(p => {
     const q = bag[p.id] || 0;
-    if (q < stockOf(p) && Math.round(p.rpCost * Math.pow(1.15, (ownedAll[p.id] || 0) + q)) <= budget) pick = p;
+    if (isRevealed(p) && q < stockOf(p) && Math.round(p.rpCost * Math.pow(1.15, (ownedAll[p.id] || 0) + q)) <= budget) pick = p;
   });
   return pick;
 }
@@ -981,9 +864,8 @@ function updateHero() {
 }
 
 function homeView() {
-  const cmp = loadCompare();
-  const revealed = RP_LADDER.filter(isRevealed).length;
-  const cards = RP_LADDER.map(p => isRevealed(p) ? productCard(p, cmp) : lockedCard(p)).join('');
+    const revealed = RP_LADDER.filter(isRevealed).length;
+  const cards = RP_LADDER.map(p => isRevealed(p) ? productCard(p) : lockedCard(p)).join('');
 
   return `
   <div class="page">
@@ -1003,7 +885,6 @@ function homeView() {
       </div>
     </section>
 
-    ${featureUnlocked('drop') ? dropBannerHtml() : ''}
 
     <div class="strip">
       <span>${icon('gauge')} ${t('strip.speed')}</span>
@@ -1037,7 +918,7 @@ function productView(id) {
         </h1>
         <div class="sub">${p.sub}</div>
         ${starsHtml(p)}
-        ${preview ? `<div class="preview-note">${icon('lock', 13)} ${t('pdp.previewNote', { amount: fmtRP(p.rpCost * 0.5) })}</div>` : ''}
+        ${preview ? `<div class="preview-note">${icon('lock', 13)} ${t('pdp.previewNote', { amount: fmtRP(p.rpCost * 8) })}</div>` : ''}
         <div class="viewers" id="pdp-viewers"></div>
         <p class="desc">${descOf(p)}</p>
         <table class="spec-table">
@@ -1074,6 +955,22 @@ function pdpQty(d, max = 9) {
   el.textContent = Math.min(max, Math.max(1, pdpQtyVal() + d));
 }
 
+const AUTOPROMO_KEY = 'rambuy.autopromo';
+const hasScratchedAny = () => loadOrders().some(o => o.scratched);
+// Domyslnie WLACZONE po odblokowaniu (pierwsze zdrapanie); klucz trzyma tylko opt-out.
+const autoPromoOn = () => hasScratchedAny() && localStorage.getItem(AUTOPROMO_KEY) !== '0';
+function setAutoPromo(on) {
+  if (on) localStorage.removeItem(AUTOPROMO_KEY);
+  else localStorage.setItem(AUTOPROMO_KEY, '0');
+  toast(t(on ? 'scratch.autoOn' : 'scratch.autoOff'), 'ticket');
+}
+// Przy wlaczonym auto: zastosuj najlepszy kod z portfela, jesli zaden nie jest aktywny.
+function maybeAutoApplyPromo() {
+  if (!autoPromoOn() || loadPromo()) return;
+  const best = loadCodes().sort((a, b) => promoRate(b) - promoRate(a))[0];
+  if (best) localStorage.setItem(PROMO_KEY, best);
+}
+
 function promoBoxHtml(pr) {
   if (pr.promo) {
     return `
@@ -1087,8 +984,7 @@ function promoBoxHtml(pr) {
         `<button class="code-chip" onclick="applyPromo('${c}')">${icon('ticket', 11)} ${c} · ${Math.round(promoRate(c) * 100)}%</button>`).join('')}</div>`
     : `<div class="promo-error" style="color:var(--ink-4)">${t('promo.noCodes')}</div>`;
   return `
-  <button class="promo-toggle" onclick="this.nextElementSibling.hidden = false; this.hidden = true">${icon('ticket', 13)} ${t('promo.use')} ${wallet.length ? `(${wallet.length})` : ''}</button>
-  <div hidden>
+  <div>
     ${chips}
     <div class="promo-row">
       <input id="promo-input" placeholder="${t('promo.placeholder')}" onkeydown="if(event.key==='Enter'){event.preventDefault();applyPromo()}">
@@ -1101,6 +997,7 @@ function promoBoxHtml(pr) {
 function bagView() {
   const bag = loadBag();
   const ids = Object.keys(bag);
+  if (ids.length) maybeAutoApplyPromo();
   if (!ids.length) {
     return `
     <div class="page"><div class="empty-state">
@@ -1157,6 +1054,7 @@ function bagView() {
 }
 
 function placeOrder() {
+  maybeAutoApplyPromo();
   const overlay = document.getElementById('overlay-root');
   overlay.innerHTML = `
     <div class="overlay"><div class="processing">
@@ -1177,6 +1075,7 @@ function placeOrder() {
     const order = {
       id: 'RB-' + Date.now().toString(36).toUpperCase().slice(-6),
       ts: Date.now(),
+      dur: deliveredAt(),
       items: Object.entries(loadBag()).map(([id, qty]) => ({ id, qty })),
       total: pr.total,
       promo: pr.promo,
@@ -1192,14 +1091,11 @@ function placeOrder() {
     saveBag({});
     if (pr.promo) consumeCode(pr.promo);
     localStorage.removeItem(PROMO_KEY);
+    dbg('order', { total: pr.total, promo: pr.promo || '-', disc: pr.discount || 0 });
     overlay.innerHTML = '';
-    const gbBefore = gbOwned() - order.items.reduce((a, it) => a + capacityGB(product(it.id)) * it.qty, 0);
     location.hash = '#/order/' + order.id;
     confetti();
     sndSuccess();
-    const before = gbMilestone(gbBefore).reached, after = gbMilestone(gbOwned()).reached;
-    if (after && after !== before) setTimeout(() =>
-      toast(t('toast.milestone', { what: msTxt(after) }), 'memory-stick'), 2200);
   }, 1300);
 }
 
@@ -1220,12 +1116,18 @@ const boAutoCost = b => Math.round(120 * Math.pow(1.9, b.autoLv || 0));
 
 /* ---------- instant buy unlock ladder ---------- */
 const instantPopoverUnlocked = () => loadOrders().some(isDelivered);
-const instantCardUnlocked = () => featureUnlocked('instant');
+// Instant buy na kartach aktywuje sie, gdy dostawa spada do <=1 s (poziomy/bonusy).
+const instantCardUnlocked = () => deliveredAt() <= 1;
 
 function persistOrder(order) {
   const orders = loadOrders();
   const i = orders.findIndex(o => o.id === order.id);
-  if (i >= 0) { orders[i] = order; saveOrders(orders); }
+  if (i < 0) return;
+  // Rozne miejsca trzymaja wlasne kopie zamowienia (tracking, zdrapka) - zapis
+  // starszej kopii nie moze cofnac jednokierunkowej flagi zdrapania.
+  if (orders[i].scratched) order.scratched = true;
+  orders[i] = order;
+  saveOrders(orders);
 }
 
 function fmtDuration(sec) {
@@ -1251,6 +1153,8 @@ const comboMult = () => comboN >= 50 ? 5 : comboN >= 25 ? 3 : comboN >= 10 ? 2 :
 function boostClick(orderId, e) {
   const order = trackedOrder && trackedOrder.id === orderId ? trackedOrder : loadOrders().find(o => o.id === orderId);
   if (!order) return;
+  const cue = document.getElementById('bo-click-cue');
+  if (cue) { cue.classList.add('gone'); setTimeout(() => cue.remove(), 400); }
   const b = loadBP();
   const now = Date.now();
   comboN = now - comboLast < 700 ? comboN + 1 : 1;
@@ -1305,6 +1209,7 @@ function boosterHtml(order) {
     <div class="bo-main">
       <div class="bo-btn-wrap">
         <button class="bo-btn" onclick="boostClick('${order.id}', event)" aria-label="${t('bo.boostAria')}">${icon('package', 40)}</button>
+        ${(loadStats().bp || 0) ? '' : `<div class="hero-click-cue bo-cue" id="bo-click-cue">${icon('mouse-pointer-click', 13)} ${t('hero.clickCue')}</div>`}
         <span class="bo-combo" id="bo-combo" hidden></span>
       </div>
       <div class="bo-stats">
@@ -1381,9 +1286,19 @@ const IBOK_KEY = 'rambuy.ibok';
 
 // One-click purchase of a single unit straight from a card.
 // First use explains the delivery time in a modal.
+// Wycena instant buy z uwzglednieniem kuponu (auto lub recznie zalozonego).
+function instantPricing(p) {
+  maybeAutoApplyPromo();
+  const base = rpUnitCost(p);
+  const promo = loadPromo();
+  const rate = loadCodes().includes(promo) ? promoRate(promo) : 0;
+  const discount = Math.round(base * rate);
+  return { base, promo: rate ? promo : '', discount, cost: base - discount };
+}
+
 function instantBuy(id) {
   const p = product(id);
-  const cost = rpUnitCost(p);
+  const { cost } = instantPricing(p);
   if (rpBal < cost) { toast(t('toast.needMore', { amount: fmtRP(cost - rpBal) }), 'lock'); return; }
   if (!localStorage.getItem(IBOK_KEY)) {
     document.getElementById('overlay-root').innerHTML = `
@@ -1410,15 +1325,17 @@ function confirmInstant(id) {
 
 function doInstantBuy(id) {
   const p = product(id);
-  const cost = rpUnitCost(p);
-  if (rpBal < cost) { toast(t('toast.needMore', { amount: fmtRP(cost - rpBal) }), 'lock'); return; }
-  spendRp(cost);
-  const gbBefore = gbOwned();
+  const ip = instantPricing(p);
+  if (rpBal < ip.cost) { toast(t('toast.needMore', { amount: fmtRP(ip.cost - rpBal) }), 'lock'); return; }
+  spendRp(ip.cost);
+  if (ip.promo) { consumeCode(ip.promo); localStorage.removeItem(PROMO_KEY); }
+  dbg('instant', { total: ip.cost, promo: ip.promo || '-', disc: ip.discount });
   const order = {
     id: 'RB-' + Date.now().toString(36).toUpperCase().slice(-6),
     ts: Date.now(),
+    dur: deliveredAt(),
     items: [{ id, qty: 1 }],
-    total: cost, promo: '', discount: 0,
+    total: ip.cost, promo: ip.promo, discount: ip.discount,
     name: 'friend', city: 'Your address',
   };
   if (new Date().getHours() < 4) bumpStat('nightOrders');
@@ -1427,10 +1344,6 @@ function doInstantBuy(id) {
   saveOrders(orders);
   sndPop();
   toast(t('toast.ordered', { name: p.name, time: fmtDuration(deliveredAt()) }), 'zap');
-  // (deliveredAt already reflects your level)
-  const before = gbMilestone(gbBefore).reached, after = gbMilestone(gbOwned()).reached;
-  if (after && after !== before) setTimeout(() =>
-    toast(t('toast.milestone', { what: msTxt(after) }), 'memory-stick'), 1500);
   keepScrollY = window.scrollY;
   renderRoute();
 }
@@ -1439,7 +1352,7 @@ function shareKit(id) {
   const p = product(id);
   const url = location.origin + location.pathname + '#/product/' + id;
   if (navigator.share) {
-    navigator.share({ title: `${p.name} — RamNeverComes`, text: `${p.name} · +${fmtRP(p.rpProd)} RP/s`, url }).catch(() => {});
+    navigator.share({ title: `${p.name} - RamNeverComes`, text: `${p.name} · +${fmtRP(p.rpProd)} RP/s`, url }).catch(() => {});
   } else {
     navigator.clipboard.writeText(url).then(
       () => toast(t('pdp.shareCopied'), 'share-2'),
@@ -1456,7 +1369,7 @@ function effectiveElapsed(order) {
 function orderStage(order) {
   const elapsed = effectiveElapsed(order);
   let stage = 0;
-  STAGE_TIMES.forEach((t, i) => { if (elapsed >= stageAt(i)) stage = i; });
+  STAGE_TIMES.forEach((t, i) => { if (elapsed >= stageAt(i, order)) stage = i; });
   return stage;
 }
 
@@ -1498,7 +1411,7 @@ function updateCourier(order) {
   const courier = document.getElementById('map-courier');
   if (!main || !courier) return;
   const mainLen = main.getTotalLength();
-  const p = Math.min(1, effectiveElapsed(order) / deliveredAt());
+  const p = Math.min(1, effectiveElapsed(order) / orderDur(order));
   const pt = main.getPointAtLength(p * mainLen);
   done.style.strokeDasharray = mainLen;
   done.style.strokeDashoffset = mainLen * (1 - p);
@@ -1539,12 +1452,13 @@ function orderView(id) {
       <div class="check-ring">${icon('circle-check-big', 36)}</div>
       <h1>${isNew ? t('order.thanks') : t('order.details')}</h1>
       <p>${t('order.meta', { id: `<span class="ord-no">${order.id}</span>`, amount: fmtRP(order.total), date: new Date(order.ts).toLocaleString(curLocale()) })}</p>
+      ${order.promo ? `<p class="ord-promo">${icon('ticket', 13)} ${t('order.promoUsed', { code: order.promo, amount: fmtRP(order.discount) })}</p>` : ''}
     </div>
 
     <div class="track-card">
       <div class="track-head">
         <h3>${icon('package', 18)} ${t('order.tracking')}</h3>
-        <span class="eta">${icon('clock', 13)} ${t('order.eta')}</span>
+        <span class="eta" id="order-eta">${icon('clock', 13)} ${orderEtaText(order)}</span>
       </div>
       <div class="timeline" id="timeline"></div>
       ${courierMapHtml(order)}
@@ -1563,21 +1477,32 @@ function orderView(id) {
   </div>`;
 }
 
+function orderEtaText(order) {
+  return isDelivered(order)
+    ? t('order.etaDone')
+    : t('order.eta', { time: fmtDuration(Math.max(1, orderDur(order) - effectiveElapsed(order))) });
+}
+
 function renderTimeline(order) {
   const tl = document.getElementById('timeline');
   if (!tl) return;
+  const eta = document.getElementById('order-eta');
+  if (eta) eta.innerHTML = `${icon('clock', 13)} ${orderEtaText(order)}`;
   const stage = orderStage(order);
   tl.innerHTML = TRACKING_STAGES.map((s, i) => {
     const done = i < stage, current = i === stage;
-    // Boost can pull a stage into the present — never show a future timestamp.
+    // Boost can pull a stage into the present - never show a future timestamp.
     const at = Math.min(Date.now(), order.ts + stageAt(i) * 1000);
-    const time = i <= stage ? `<span class="t-time">${new Date(at).toLocaleTimeString(curLocale())}</span>` : '';
+    // Przyszle etapy renderuja tresc niewidocznie: wysokosc kroku jest stala,
+    // wiec boostowanie nie przesuwa strony (i przycisku) pod kursorem.
+    const hide = i <= stage ? '' : ' style="visibility:hidden"';
+    const time = `<span class="t-time"${hide}>${new Date(at).toLocaleTimeString(curLocale())}</span>`;
     return `
     <div class="t-step ${done ? 'done' : ''} ${current ? 'current' : ''}">
       <div class="t-dot">${icon(done ? 'check' : s.icon, 17)}</div>
       <div class="t-body">
         <h5>${t('stage.' + s.key + '.label')}</h5>
-        <p>${i <= stage ? t('stage.' + s.key + '.detail') : ''}</p>
+        <p${hide}>${t('stage.' + s.key + '.detail')}</p>
         ${time}
       </div>
     </div>`;
@@ -1645,52 +1570,6 @@ function ordersView() {
   </div>`;
 }
 
-/* ---------- compare ---------- */
-function compareView() {
-  const list = loadCompare().map(product).filter(Boolean);
-  if (list.length < 2) {
-    return `
-    <div class="page"><div class="empty-state">
-      ${icon('arrow-right-left', 44)}
-      <h3>${t('cmp.empty.title')}</h3>
-      <p>${t('cmp.empty.sub')}</p>
-      <a class="btn" href="#/">${t('cmp.empty.cta')}</a>
-    </div></div>`;
-  }
-  const speedOf = p => parseInt(p.speed, 10);
-  const latOf = p => parseInt(p.latency.replace('CL', ''), 10);
-  const best = { price: Math.min(...list.map(p => p.price)), speed: Math.max(...list.map(speedOf)),
-                 lat: Math.min(...list.map(latOf)), rating: Math.max(...list.map(p => p.rating)) };
-  const row = (label, fn) => `<tr><td>${label}</td>${list.map(fn).join('')}</tr>`;
-
-  return `
-  <div class="page">
-    <h1 class="page-title">${t('cmp.title')}</h1>
-    <p class="page-sub">${t('cmp.sub', { n: list.length })}</p>
-    <div class="cmp-scroll">
-    <table class="cmp-table">
-      <thead><tr><th></th>${list.map(p => `
-        <th>
-          <a href="#/product/${p.id}"><img src="${p.img}" alt="${p.name}"></a>
-          <div class="cmp-name">${p.name}</div>
-          <button class="cmp-remove" onclick="toggleCompare('${p.id}');renderRoute()">${icon('x', 11)} ${t('cmp.remove')}</button>
-        </th>`).join('')}</tr></thead>
-      <tbody>
-        ${row(t('cmp.price'), p => `<td class="${p.price === best.price ? 'best' : ''}">${fmtRP(rpUnitCost(p))} RP</td>`)}
-        ${row(t('cmp.production'), p => `<td>+${fmtRP(p.rpProd)} RP/s</td>`)}
-        ${row(t('cmp.capacity'), p => `<td>${p.sub.split('·')[0].trim()}</td>`)}
-        ${row(t('pdp.speed'), p => `<td class="${speedOf(p) === best.speed ? 'best' : ''}">${p.speed}</td>`)}
-        ${row(t('pdp.latency'), p => `<td class="${latOf(p) === best.lat ? 'best' : ''}">${p.latency}</td>`)}
-        ${row(t('pdp.voltage'), p => `<td>${p.voltage}</td>`)}
-        ${row(t('pdp.profile'), p => `<td>${p.profile}</td>`)}
-        ${row(t('cmp.rating'), p => `<td class="${p.rating === best.rating ? 'best' : ''}">★ ${p.rating}</td>`)}
-        ${row(t('cmp.stock'), p => `<td>${stockHtml(p)}</td>`)}
-        ${row('', p => `<td>${addBtnHtml(p)}</td>`)}
-      </tbody>
-    </table>
-    </div>
-  </div>`;
-}
 
 function notFoundView() {
   return `
@@ -1750,10 +1629,14 @@ function fmtRP(n) {
 const signedRp = n => (n < 0 ? '-' : '+') + fmtRP(Math.abs(n)) + ' RP';
 
 const RP_LADDER = [...PRODUCTS].sort((a, b) => a.rpCost - b.rpCost);
-// Deliveries get faster as you level: -15s per level, never below 45s.
-const deliveredAt = () => Math.max(1, STAGE_TIMES[STAGE_TIMES.length - 1] - 15 * (xpInfo().lvl - 1));
-const stageAt = i => STAGE_TIMES[i] / STAGE_TIMES[STAGE_TIMES.length - 1] * deliveredAt();
-const isDelivered = order => effectiveElapsed(order) >= deliveredAt();
+// Dostawy przyspieszaja z poziomem: -21 s/lvl, 1 s ~lvl 30 (15 s/lvl dawalo lvl 41 - za pozno).
+const deliveredAt = () => Math.max(1, STAGE_TIMES[STAGE_TIMES.length - 1] - 21 * (xpInfo().lvl - 1));
+// Czas dostawy zamrozony w momencie zlozenia zamowienia (o.dur) - awans w trakcie
+// nie skraca retroaktywnie starych dostaw (zawyzalo zarobki offline). Fallback
+// deliveredAt() dla zapisow sprzed tej zmiany.
+const orderDur = o => (o && o.dur) || deliveredAt();
+const stageAt = (i, o) => STAGE_TIMES[i] / STAGE_TIMES[STAGE_TIMES.length - 1] * orderDur(o);
+const isDelivered = order => effectiveElapsed(order) >= orderDur(order);
 
 // all=true counts everything you bought (for pricing/milestones);
 // all=false counts only delivered kits + case drops (production).
@@ -1765,15 +1648,22 @@ function ownedCounts(all = false) {
   loadGacha().forEach(x => { c[x.id] = (c[x.id] || 0) + 1; });
   return c;
 }
+// GB liczone z DOSTARCZONYCH kitow (+ skrzynki, ktore instaluja sie od razu) -
+// mnoznik progow rusza dopiero, gdy zamowienie dojedzie, spojnie z produkcja.
 function gbOwned() {
-  const c = ownedCounts(true);
+  const c = ownedCounts();
   return Object.entries(c).reduce((s, [id, n]) => s + capacityGB(product(id)) * n, 0);
 }
 function prodMult() {
   const gb = gbOwned();
   let n = 0;
   GB_MILESTONES.forEach(m => { if (gb >= m.gb) n++; });
-  return Math.pow(2, n);
+  // 1.15^n: progi GB wypadaja ~1 na tier drabinki, wiec mnoznik kamienia
+  // sklada sie z produkcja tieru (x1.618). Warunek stabilnosci ekonomii:
+  // 1.618 * bonus < 2 (wzrost cen), inaczej czas do kolejnego kitu MALEJE
+  // i gra ucieka (logi gracza 2026-07-19: przy 1.5 odstepy staly w miejscu ~20 s,
+  // przy 2.0 malaly do 2 s). 1.15: efektywnie 1.86/tier, odstepy rosna ~7%/tier.
+  return Math.pow(1.15, n);
 }
 function cps() {
   const c = ownedCounts();
@@ -1789,11 +1679,13 @@ function rpUnitCost(p, offset = 0) {
 function spendRp(n) { rpBal -= n; saveRp(); updateXpChip(); }
 
 // The first two rungs are always visible; the rest reveal once you have
-// earned half their price (or own one). Earnings only grow, so reveals never regress.
+// earned 8x their price (or own one). Earnings only grow, so reveals never regress.
+// Prog 8x: symulacja (CLAUDE.md, Balans) - przy 2x odkrycia wypadaly co ~1 min
+// na starcie; przy 8x pierwsze co ~5-9 min, pozniejsze co kilkanascie+.
 const CHEAT_KEY = 'rambuy.cheat';
 const isRevealed = p => RP_LADDER.indexOf(p) < 2 ||
   localStorage.getItem(CHEAT_KEY) === 'unlockall' ||
-  loadStats().xp >= p.rpCost * 0.5 || (ownedCounts(true)[p.id] || 0) > 0;
+  loadStats().xp >= p.rpCost * 8 || (ownedCounts(true)[p.id] || 0) > 0;
 
 // Console cheat, e.g. cheat('unlockall'). Cleared by "Clear progress".
 function cheat(code) {
@@ -1820,6 +1712,18 @@ function checkReveals() {
       } else {
         sndReveal();
         revealCinematic(RP_LADDER[n - 1], n - seen - 1);
+      }
+      dbg('reveal', {
+        kit: RP_LADDER[n - 1].id,
+        plus: n - seen - 1,
+        gapS: dbgLastRevealTs ? Math.round((Date.now() - dbgLastRevealTs) / 1000) : null,
+      });
+      dbgLastRevealTs = Date.now();
+      // Odswiez drabinke od razu (bez przeladowania), jesli jest na ekranie.
+      const route = (location.hash || '#/').replace(/^#\//, '').split('/')[0];
+      if (route === '' || route === 'kits') {
+        keepScrollY = window.scrollY;
+        renderRoute();
       }
     }
   }
@@ -1878,6 +1782,100 @@ function closeBurger() {
   setTimeout(() => { root.innerHTML = ''; }, 250);
 }
 
+
+/* ---------- debug telemetry (rambuy.test / cheat('debug')) ---------- */
+const DBG_KEY = 'rambuy.debuglog';
+// Tryb debug: debug(true/false) z konsoli; bez flagi auto-on na hostach dev.
+const dbgOn = () => {
+  const f = localStorage.getItem('rambuy.debug');
+  if (f === '1') return true;
+  if (f === '0') return false;
+  return location.hostname === 'rambuy.test' || location.hostname === 'localhost';
+};
+function debug(on = true) {
+  localStorage.setItem('rambuy.debug', on ? '1' : '0');
+  location.reload();
+}
+let dbgEvents = null;
+let dbgClicks = [];
+let dbgLastRevealTs = 0;
+function dbg(type, data = {}) {
+  if (!dbgOn()) return;
+  if (!dbgEvents) { try { dbgEvents = JSON.parse(localStorage.getItem(DBG_KEY) || '[]'); } catch (e) { dbgEvents = []; } }
+  dbgEvents.push({
+    t: new Date().toISOString().slice(11, 19),
+    type,
+    xp: Math.round(loadStats().xp),
+    rp: Math.round(rpBal),
+    cps: Math.round(cps() * 10) / 10,
+    lvl: xpInfo().lvl,
+    ...data,
+  });
+  if (dbgEvents.length > 4000) dbgEvents = dbgEvents.slice(-3000);
+  localStorage.setItem(DBG_KEY, JSON.stringify(dbgEvents));
+}
+const dbgClickRate = () => {
+  const cut = Date.now() - 5000;
+  dbgClicks = dbgClicks.filter(x => x > cut);
+  return Math.round(dbgClicks.length / 5 * 10) / 10;
+};
+function debugDump() {
+  if (!dbgEvents) { try { dbgEvents = JSON.parse(localStorage.getItem(DBG_KEY) || '[]'); } catch (e) { dbgEvents = []; } }
+  const lines = dbgEvents.map(e => {
+    const extra = Object.entries(e).filter(([k]) => !['t', 'type', 'xp', 'rp', 'cps', 'lvl'].includes(k))
+      .map(([k, v]) => k + '=' + v).join(' ');
+    return `${e.t} ${e.type.padEnd(8)} xp=${e.xp} rp=${e.rp} cps=${e.cps} lvl=${e.lvl} ${extra}`.trim();
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ramnevercomes-log.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  return lines.length + ' zdarzen';
+}
+function debugClear() { dbgEvents = []; localStorage.removeItem(DBG_KEY); return 'log wyczyszczony'; }
+function dbgHud() {
+  if (!dbgOn() || document.getElementById('dbg-hud')) return;
+  const el = document.createElement('div');
+  el.id = 'dbg-hud';
+  el.innerHTML = `<span id="dbg-line"></span><button onclick="debugDump()" title="Pobierz log">log</button>`;
+  document.body.appendChild(el);
+  setInterval(() => {
+    const line = document.getElementById('dbg-line');
+    if (line) line.textContent = `${dbgClickRate()} kl/s · ${fmtRP(cps())} RP/s · lvl ${xpInfo().lvl} · xp ${fmtRP(loadStats().xp)}`;
+  }, 500);
+  setInterval(() => dbg('snap', { klps: dbgClickRate(), rev: RP_LADDER.filter(isRevealed).length, mult: Math.round(prodMult() * 10) / 10 }), 10000);
+}
+
+/* ---------- konami code: deszcz kosci RAM ---------- */
+const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+let konamiPos = 0;
+window.addEventListener('keydown', e => {
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  konamiPos = k === KONAMI[konamiPos] ? konamiPos + 1 : (k === KONAMI[0] ? 1 : 0);
+  if (konamiPos === KONAMI.length) { konamiPos = 0; ramRain(); }
+});
+
+function ramRain() {
+  sndSuccess();
+  const pool = RP_LADDER.filter(isRevealed).map(p => p.img);
+  if (!pool.length) pool.push(RP_LADDER[0].img);
+  for (let i = 0; i < 36; i++) {
+    const el = document.createElement('img');
+    el.src = pool[Math.floor(Math.random() * pool.length)];
+    el.className = 'ram-drop';
+    el.style.width = (34 + Math.random() * 56) + 'px';
+    el.style.left = (Math.random() * 96) + 'vw';
+    el.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+    el.style.animationDuration = (1.6 + Math.random() * 2.2) + 's';
+    el.style.animationDelay = (Math.random() * 1.1) + 's';
+    el.addEventListener('animationend', () => el.remove());
+    document.body.appendChild(el);
+  }
+  toast(t('konami.toast'), 'sparkles');
+}
+
 /* ---------- kit reveal cinematic ---------- */
 let revealTimer = null;
 function revealCinematic(p, extra) {
@@ -1886,6 +1884,9 @@ function revealCinematic(p, extra) {
   clearTimeout(revealTimer);
   const el = document.createElement('div');
   el.id = 'kit-reveal';
+  // Przez pierwsza 1s przepuszczaj klikniecia (spam w booster nie zamyka overlay'a).
+  el.classList.add('kr-passthrough');
+  setTimeout(() => el.classList.remove('kr-passthrough'), 1000);
   el.innerHTML = `
     <div class="kr-card" onclick="closeKitReveal('#/product/${p.id}')">
       <div class="kr-glow"></div>
@@ -1894,9 +1895,11 @@ function revealCinematic(p, extra) {
       <span class="kr-eyebrow">${icon('sparkles', 12)} ${t('reveal.eyebrow')}</span>
       <b class="kr-name">${p.name}</b>
       ${extra > 0 ? `<span class="kr-more">${t('reveal.more', { n: extra })}</span>` : ''}
+      <i class="kr-timer"></i>
     </div>`;
   el.addEventListener('click', e => { if (e.target === el) closeKitReveal(); });
   document.body.appendChild(el);
+  el.style.setProperty('--kr-ttl', '3200ms');
   revealTimer = setTimeout(() => closeKitReveal(), 3200);
 }
 function closeKitReveal(href) {
@@ -1911,9 +1914,12 @@ function closeKitReveal(href) {
 /* ---------- main clicker ---------- */
 let frenzyUntil = 0;
 function clickValue() {
-  return (1 + cps() * 0.01) * comboMult() * (Date.now() < frenzyUntil ? 7 : 1);
+  // 2% produkcji za klik (bylo 1% - przy duzej produkcji klik czul sie bezuzyteczny;
+  // z combo x5 i frenzy x7 aktywne klikanie daje odczuwalny bonus).
+  return (1 + cps() * 0.02) * comboMult() * (Date.now() < frenzyUntil ? 7 : 1);
 }
 function mainClick(e) {
+  dbgClicks.push(Date.now());
   const now = Date.now();
   comboN = now - comboLast < 700 ? comboN + 1 : 1;
   comboLast = now;
@@ -1949,6 +1955,13 @@ function tickEconomy() {
   localStorage.setItem(SEEN_KEY, String(Date.now()));
   updateXpChip();
   checkReveals();
+  const msNow = gbMilestone(gbOwned()).reached;
+  const msSeen = localStorage.getItem('rambuy.msseen');
+  if (msNow && msSeen !== String(msNow.gb)) {
+    // brak klucza = pierwszy tick po aktualizacji/nowej grze - zapisz bez fanfar
+    if (msSeen !== null) toast(t('toast.milestone', { what: msTxt(msNow) }), 'memory-stick');
+    localStorage.setItem('rambuy.msseen', String(msNow.gb));
+  } else if (!msNow && msSeen === null) localStorage.setItem('rambuy.msseen', '0');
   tickNavBadges();
   refreshStockButtons();
   updateHero();
@@ -1966,7 +1979,7 @@ function offlineEarnings() {
   const now = Date.now();
   let gain = 0;
   loadOrders().forEach(o => {
-    const deliveredTs = o.ts + (deliveredAt() - (o.booster ? o.booster.earned : 0)) * 1000;
+    const deliveredTs = o.ts + (orderDur(o) - (o.booster ? o.booster.earned : 0)) * 1000;
     const from = Math.max(seen, deliveredTs);
     if (now > from) {
       const kitProd = o.items.reduce((s, it) => s + product(it.id).rpProd * it.qty, 0);
@@ -2000,9 +2013,11 @@ function spawnGolden() {
       bumpStat('golden');
       if (Math.random() < 0.3) {
         frenzyUntil = Date.now() + 20000;
+        dbg('golden', { frenzy: 1 });
         toast(t('toast.frenzy'), 'zap');
       } else {
         const gain = Math.max(50, Math.round(cps() * 60 + rpBal * 0.01));
+        dbg('golden', { gain });
         addXp(gain, t('toast.golden'));
       }
     };
@@ -2012,7 +2027,7 @@ function spawnGolden() {
   scheduleGolden();
 }
 
-/* ---------- RAM Points (xp) — the layer that ties every mechanic together ---------- */
+/* ---------- RAM Points (xp) - the layer that ties every mechanic together ---------- */
 const STATS_KEY = 'rambuy.stats';
 const loadStats = () => Object.assign({ xp: 0, swipes: 0, spins: 0 }, JSON.parse(localStorage.getItem(STATS_KEY) || '{}'));
 const saveStats = s => localStorage.setItem(STATS_KEY, JSON.stringify(s));
@@ -2128,13 +2143,15 @@ function profileView() {
     })()}
     <div class="stat-grid">
       ${tile('sparkles', fmtRP(rpBal) + ' RP', t('profile.tile.balance'))}
-      ${tile('gauge', fmtRP(cps()) + '/s', t('profile.tile.production'), t('profile.tile.prodSmall', { n: prodMult() }))}
+      ${tile('gauge', fmtRP(cps()) + '/s', t('profile.tile.production'), t('profile.tile.prodSmall', { n: +prodMult().toFixed(2) }))}
       ${tile('chart-line', fmtRP(L.st.xp) + ' RP', t('profile.tile.lifetime'))}
       ${tile('memory-stick', L.gb.toLocaleString(curLocale()) + ' GB', t('profile.tile.memory'), t('profile.tile.memorySmall', { n: L.kits }))}
       ${tile('receipt', fmtRP(L.spent) + ' RP', t('profile.tile.spent'), plural(L.orders, 'profile.tile.spentSmall', 'profile.tile.spentSmallPlural'))}
       ${tile('ticket', fmtRP(L.codeSaved) + ' RP', t('profile.tile.codes'))}
       ${tile('zap', L.boost.toLocaleString(curLocale()) + ' BP', t('profile.tile.boost'))}
       ${tile('gift', L.pulls.length, t('profile.tile.cases'), legend ? t('case.legendaryCount', { n: legend }) : t('profile.tile.casesNone'))}
+      ${tile('rotate-ccw', (L.st.spins || 0).toLocaleString(curLocale()), t('profile.tile.spins'))}
+      ${tile('heart', (L.st.swipes || 0).toLocaleString(curLocale()), t('profile.tile.swiped'))}
       ${tile('arrow-right-left', (L.st.trades || 0).toLocaleString(curLocale()), t('profile.tile.trades'), signedRp(L.st.tradeNet || 0))}
     </div>
     <div class="sec-head" style="padding-top:34px"><h2>${t('profile.ach.title')}</h2>
@@ -2142,7 +2159,7 @@ function profileView() {
     <div class="ach-grid">${ach.html}</div>
 
     <div class="xp-ways" style="margin-top:30px">
-      ${t('profile.how', { time: fmtDuration(Math.max(45, 600 - 15 * (xpInfo().lvl - 1))) })}
+      ${t('profile.how', { time: fmtDuration(deliveredAt()) })}
     </div>
     <div style="text-align:center;margin-top:26px">
       <button class="btn ghost danger" onclick="clearProgress(this)">${icon('trash-2', 14)} ${t('profile.clear')}</button>
@@ -2162,11 +2179,12 @@ function clearProgress(btn) {
     }, 4000);
     return;
   }
-  [ORDERS_KEY, GACHA_KEY, STATS_KEY, 'rambuy.streak', WHEEL_KEY, PROMO_KEY, SEEN_KEY, CODES_KEY, REVEAL_KEY, DISCOVER_KEY, CASE_KEY, CHEAT_KEY, BP_KEY, IBOK_KEY, ACH_KEY, MARKET_KEY, 'rambuy.lvlseen', 'rambuy.allkits'].forEach(k => localStorage.removeItem(k));
-  sessionStorage.removeItem(QUEUE_KEY);
+  [ORDERS_KEY, GACHA_KEY, STATS_KEY, 'rambuy.streak', WHEEL_KEY, PROMO_KEY, SEEN_KEY, CODES_KEY, REVEAL_KEY, DISCOVER_KEY, CASE_KEY, CHEAT_KEY, BP_KEY, IBOK_KEY, ACH_KEY, MARKET_KEY, BAG_KEY, 'rambuy.queue', AUTOPROMO_KEY, 'rambuy.lvlseen', 'rambuy.allkits', 'rambuy.msseen'].forEach(k => localStorage.removeItem(k));
+  dbg('reset', {});
   rpBal = 128;
   saveRp();
   updateXpChip();
+  updateBagBadge();
   toast(t('profile.clearedToast'), 'rotate-ccw');
   renderRoute();
 }
@@ -2193,77 +2211,141 @@ function mysteryView() {
       </div>
     </div>` : '';
 
-  const wait = caseReadyIn();
   return `
   <div class="page"><div class="mystery-page" style="max-width:none">
     <h1>${t('case.title')}</h1>
     <p class="m-sub">${t('case.sub')}</p>
     <div id="pack-zone">
-      <div class="case-box">${icon('gift', 42)}<b>${t('case.box')}</b></div>
-      <button class="btn big" id="pack-btn" onclick="openCase()" ${wait > 0 ? 'disabled' : ''}>
-        ${wait > 0 ? t('case.next', { s: Math.ceil(wait / 1000) }) : t('case.open', { amount: fmtRP(caseCost()) })}
-      </button>
+      <div class="case-tiers">
+        ${Object.keys(CASE_TYPES).map(k => {
+          const wait = caseReadyIn(k);
+          return `
+        <div class="case-tier ct-${k}">
+          <div class="ct-hero">
+            <img class="ct-img" src="assets/case-${k}.jpg" alt="" loading="lazy">
+            <h3>${t('case.' + k + '.name')}</h3>
+          </div>
+          <div class="ct-body">
+            <div class="ct-drops"><div class="ct-rows" data-drops="${k}">${caseDropsHtml(k)}</div></div>
+            <button class="btn" data-case="${k}" onclick="openCase('${k}')" ${wait > 0 || caseCost(k) === null ? 'disabled' : ''}>
+              ${caseCost(k) === null ? `${icon('lock', 13)} ${t('case.locked', { n: caseRevealNeed(k) })}` : wait > 0 ? t('case.next', { s: Math.ceil(wait / 1000) }) : t('case.open', { amount: fmtRP(caseCost(k)) })}
+            </button>
+          </div>
+        </div>`; }).join('')}
+      </div>
+      <div id="case-stage"></div>
     </div>
-    <p class="m-odds">${t('case.odds')}</p>
     ${coll}
   </div></div>`;
 }
 
 const CASE_KEY = 'rambuy.case';
-const CASE_COOLDOWN = 180000;
-const caseReadyIn = () => {
+const caseReadyIn = (type = 'standard') => {
   const st = JSON.parse(localStorage.getItem(CASE_KEY) || '{}');
-  return Math.max(0, (st.ts || 0) + CASE_COOLDOWN - Date.now());
+  return Math.max(0, (st[type] || st.ts || 0) + CASE_TYPES[type].cooldown - Date.now());
 };
 
 const REEL_WIN_IDX = 46;
 
-function rollRarity() {
-  const roll = Math.random();
-  return roll < 0.6 ? 'common' : roll < 0.9 ? 'rare' : 'legendary';
+// Trzy poziomy ryzyka. Cena = sekundy produkcji (zawsze osiagalna po chwili gry).
+// Nagroda-kit dobierany wzgledem CENY skrzynki (kotwica: najdrozszy tier <= cena),
+// wiec placisz X i dostajesz kit warty ulamkiem albo wielokrotnoscia X.
+// EV ~= cena (safe lekko na plus, black ~1.0 przy 75% szansie straty i jackpocie x8).
+const CASE_TYPES = {
+  // Wszystkie skrzynki: rowno 8 mozliwych dropow. EV 110% / 125% / 150%,
+  // szansa zysku ~42% / ~36% / ~26% - stale, bo cena = cena kitu-kotwicy.
+  // Okno przycinane do odkrytych kitow (zero '???' na liscie); pelne okno
+  // wymaga odkrycia floorTier+maxOff+1 kitow - inaczej skrzynka zablokowana.
+  standard: { secs: 60,  floorTier: 3, cooldown: 120000, odds: [[-3, .09], [-2, .2], [-1, .29], [0, .207], [1, .15], [2, .04], [3, .017], [4, .006]] },
+  premium:  { secs: 300, floorTier: 3, cooldown: 300000, odds: [[-3, .16], [-2, .245], [-1, .238], [0, .10], [1, .15], [2, .075], [3, .02], [4, .012]] },
+  black:    { secs: 900, floorTier: 4, cooldown: 600000, odds: [[-4, .323], [-3, .23], [-2, .14], [-1, .05], [1, .10], [2, .08], [3, .045], [4, .032]] },
+};
+const caseMaxOff = type => Math.max(...CASE_TYPES[type].odds.map(([o]) => o));
+const highestRevealedTier = () => {
+  let hi = -1;
+  RP_LADDER.forEach((p, i) => { if (isRevealed(p)) hi = i; });
+  return hi;
+};
+// Zwraca tier kotwicy albo -1, gdy gracz nie odkryl jeszcze pelnego okna.
+function caseAnchor(type) {
+  const c = CASE_TYPES[type];
+  const target = Math.max(RP_LADDER[c.floorTier].rpCost, cps() * c.secs);
+  let t = c.floorTier, best = Infinity;
+  RP_LADDER.forEach((p, i) => {
+    const d = Math.abs(Math.log(p.rpCost / target));
+    if (d < best) { best = d; t = i; }
+  });
+  t = Math.max(c.floorTier, t);
+  // Okno nie moze wystawac ponad front odkryc - skrzynka nigdy nie zawiera '???'.
+  t = Math.min(t, highestRevealedTier() - caseMaxOff(type));
+  return t < c.floorTier ? -1 : t;
 }
-function randOfRarity(want) {
-  const pool = PRODUCTS.filter(p => gachaRarity(p) === want);
-  return pool[Math.floor(Math.random() * pool.length)];
+// Ile kitow drabinki trzeba miec odkrytych, by otworzyc skrzynke danego typu.
+const caseRevealNeed = type => CASE_TYPES[type].floorTier + caseMaxOff(type) + 1;
+function caseCost(type = 'standard') {
+  const a = caseAnchor(type);
+  return a < 0 ? null : RP_LADDER[a].rpCost;
+}
+// Lista mozliwych dropow (po klampowaniu ofsety moga sie scalac - sumujemy szanse).
+function caseOutcomes(type) {
+  const anchor = caseAnchor(type);
+  if (anchor < 0) return [];
+  const byIdx = new Map();
+  for (const [off, prob] of CASE_TYPES[type].odds) {
+    const idx = Math.max(0, Math.min(RP_LADDER.length - 1, anchor + off));
+    byIdx.set(idx, (byIdx.get(idx) || 0) + prob);
+  }
+  return [...byIdx.entries()].sort((a, b) => a[0] - b[0])
+    .map(([idx, prob]) => ({
+      p: RP_LADDER[idx],
+      prob,
+      pct: prob < 0.01 ? (prob * 100).toFixed(1) : Math.round(prob * 100),
+    }));
 }
 
-function caseCost() { return Math.max(250, Math.round(cps() * 300)); }
-
-function pickCaseKit() {
-  const owned = ownedCounts(true);
-  let hi = 0;
-  RP_LADDER.forEach((p, i) => { if (owned[p.id]) hi = Math.max(hi, i); });
-  const roll = Math.random();
-  let idx, rar;
-  if (roll < 0.6) { idx = Math.floor(Math.random() * (hi + 1)); rar = 'common'; }
-  else if (roll < 0.9) { idx = Math.min(RP_LADDER.length - 1, hi + 1); rar = 'rare'; }
-  else { idx = Math.min(RP_LADDER.length - 1, hi + 2); rar = 'legendary'; }
+function pickCaseKit(type = 'standard') {
+  const anchor = caseAnchor(type);
+  const odds = CASE_TYPES[type].odds;
+  let roll = Math.random(), off = odds[odds.length - 1][0];
+  for (const [o, p] of odds) { if (roll < p) { off = o; break; } roll -= p; }
+  const idx = Math.max(0, Math.min(RP_LADDER.length - 1, anchor + off));
+  const rar = off >= 2 ? 'legendary' : off >= 1 ? 'rare' : 'common';
   return { p: RP_LADDER[idx], rar };
 }
 
-function openCase() {
-  const zone = document.getElementById('pack-zone');
-  if (!zone || document.getElementById('case-reel')) return;
-  if (caseReadyIn() > 0) return;
-  if (rpBal < caseCost()) { toast(t('toast.needMore', { amount: fmtRP(caseCost() - rpBal) }), 'x'); return; }
-  spendRp(caseCost());
-  localStorage.setItem(CASE_KEY, JSON.stringify({ ts: Date.now() }));
-  const pick = pickCaseKit();
+function openCase(type = 'standard') {
+  const zone = document.getElementById('case-stage');
+  if (!zone || zone.querySelector(`.case-run[data-type="${type}"][data-spinning]`)) return;
+  if (caseReadyIn(type) > 0) return;
+  const cost = caseCost(type);
+  if (cost === null) { toast(t('case.locked', { n: caseRevealNeed(type) }), 'lock'); return; }
+  if (rpBal < cost) { toast(t('toast.needMore', { amount: fmtRP(cost - rpBal) }), 'x'); return; }
+  spendRp(cost);
+  const cd = JSON.parse(localStorage.getItem(CASE_KEY) || '{}');
+  cd[type] = Date.now();
+  delete cd.ts;
+  localStorage.setItem(CASE_KEY, JSON.stringify(cd));
+  const pick = pickCaseKit(type);
   const winner = pick.p;
   const winRarity = pick.rar;
+  dbg('case', { type, drop: winner.id, rar: winRarity, cost });
 
   // 54 filler tiles with case odds, the winner planted at REEL_WIN_IDX.
-  const tiles = Array.from({ length: 54 }, (_, i) => i === REEL_WIN_IDX ? winner : randOfRarity(rollRarity()));
-  zone.innerHTML = `
-    <div class="reel-wrap">
-      <div class="reel-needle"></div>
-      <div class="reel-fade-l"></div><div class="reel-fade-r"></div>
-      <div class="reel" id="case-reel">
-        ${tiles.map(p => `<div class="reel-tile ${gachaRarity(p)}"><img src="${p.img}" alt=""><small>${p.name}</small></div>`).join('')}
+  const tiles = Array.from({ length: 54 }, (_, i) => i === REEL_WIN_IDX ? winner : pickCaseKit(type).p);
+  // Kazdy typ skrzynki ma wlasny slot - rownolegle tasmy nie przeszkadzaja sobie.
+  zone.querySelector(`.case-run[data-type="${type}"]`)?.remove();
+  zone.insertAdjacentHTML('beforeend', `
+    <div class="case-run" data-type="${type}" data-spinning="1">
+      <div class="reel-wrap">
+        <div class="reel-needle"></div>
+        <div class="reel-fade-l"></div><div class="reel-fade-r"></div>
+        <div class="reel" id="case-reel-${type}">
+          ${tiles.map(p => `<div class="reel-tile ${gachaRarity(p)}"><img src="${p.img}" alt=""><small>${p.name}</small></div>`).join('')}
+        </div>
       </div>
-    </div>`;
-
-  const reel = document.getElementById('case-reel');
+    </div>`);
+  const run = zone.querySelector(`.case-run[data-type="${type}"]`);
+  const reel = document.getElementById(`case-reel-${type}`);
   const wrapW = reel.parentElement.clientWidth;
   // Krok mierzony z DOM: responsywny CSS moze zmienic szerokosc kafelka,
   // a sztywna stala rozjezdzala taśmę z iglą (pusta taśma na mobile).
@@ -2273,11 +2355,12 @@ function openCase() {
   const target = REEL_WIN_IDX * step + tileW / 2 - wrapW / 2 + jitter;
   const DUR = 5800;
 
+  run.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   requestAnimationFrame(() => requestAnimationFrame(() => {
     reel.style.transition = `transform ${DUR}ms cubic-bezier(.08,.6,.1,1)`;
     reel.style.transform = `translateX(${-target}px)`;
   }));
-  // Tick as tiles cross the needle — dense early, sparse at the end.
+  // Tick as tiles cross the needle - dense early, sparse at the end.
   const passes = Math.round(target / step);
   for (let k = 1; k <= passes; k++) {
     const t = DUR * (1 - Math.pow(1 - k / passes, 1 / 3));
@@ -2290,15 +2373,21 @@ function openCase() {
     localStorage.setItem(GACHA_KEY, JSON.stringify(pulls));
     addXp(winRarity === 'legendary' ? 100 : 25, t('case.openedXp'));
     if (winRarity === 'legendary') { confetti(); sndSuccess(); } else sndPop();
-    zone.insertAdjacentHTML('beforeend', `
-      <div class="pull-card ${winRarity}" style="margin-top:20px">
-        <span class="rarity ${winRarity}">${t('rarity.' + winRarity)}</span>
-        <img src="${winner.img}" alt="${winner.name}">
-        <h4>${winner.name}</h4>
-        <div class="sub">${t('case.pullSub', { sub: winner.sub, prod: fmtRP(winner.rpProd) })}</div>
-        <button class="btn ghost" style="margin-top:8px" onclick="renderRoute()">${t('case.another')}</button>
-      </div>`);
-    hydrateIcons();
+    run.remove();
+    // Wygrana pokazuje sie na chwile nad lista dropow tej skrzynki, potem znika.
+    const drops = document.querySelector(`[data-drops="${type}"]`)?.closest('.ct-drops');
+    if (drops) {
+      drops.querySelector('.ct-win')?.remove();
+      drops.insertAdjacentHTML('beforeend', `
+        <div class="ct-win ${winRarity}">
+          <span class="rarity ${winRarity}">${t('rarity.' + winRarity)}</span>
+          <img src="${winner.img}" alt="${winner.name}">
+          <h4>${winner.name}</h4>
+          <div class="sub">${t('case.pullSub', { sub: winner.sub, prod: fmtRP(winner.rpProd) })}</div>
+        </div>`);
+      const w = drops.querySelector('.ct-win');
+      setTimeout(() => { w.classList.add('out'); setTimeout(() => w.remove(), 450); }, 4000);
+    }
   }, DUR + 250);
 }
 
@@ -2306,21 +2395,34 @@ function openCase() {
 let deckOrder = [], deckIdx = 0;
 
 const DISCOVER_KEY = 'rambuy.discover';
+const DISCOVER_MAX = 10;
+const DISCOVER_REGEN_MS = 180000; // 1 swipe / 3 min - zysk pozostaje kosmetyczny (~+3% produkcji)
 function discoverState() {
   const st = JSON.parse(localStorage.getItem(DISCOVER_KEY) || '{}');
-  if (st.day !== todayStr()) { st.day = todayStr(); st.n = 0; }
+  // Ladunki: pula DISCOVER_MAX, regeneracja co DISCOVER_REGEN_MS. Stare formaty
+  // stanu (dzienny/lifetime) migruja do pelnej puli.
+  if (typeof st.charges !== 'number') return { charges: DISCOVER_MAX, ts: Date.now() };
+  const regen = Math.floor((Date.now() - st.ts) / DISCOVER_REGEN_MS);
+  if (regen > 0) {
+    st.charges = Math.min(DISCOVER_MAX, st.charges + regen);
+    st.ts = st.charges >= DISCOVER_MAX ? Date.now() : st.ts + regen * DISCOVER_REGEN_MS;
+  }
   return st;
 }
-function discoverReward() { return Math.max(5, Math.round(cps() * 15)); }
+const discoverNextIn = () => {
+  const st = discoverState();
+  return st.charges >= DISCOVER_MAX ? 0 : Math.max(0, st.ts + DISCOVER_REGEN_MS - Date.now());
+};
+function discoverReward() { return Math.max(5, Math.round(cps() * 5)); }
 
 function discoverView() {
-  const left0 = Math.max(0, RP_LADDER.length - (discoverState().n || 0));
+  const left0 = discoverState().charges;
   if (left0 === 0) {
     return `
     <div class="page"><div class="empty-state">
       ${icon('thumbs-up', 44)}
       <h3>${t('disc.done.title')}</h3>
-      <p>${t('disc.done.sub', { n: RP_LADDER.length })}</p>
+      <p>${t('disc.done.sub', { m: Math.ceil(discoverNextIn() / 60000) })}</p>
       <a class="btn" href="#/">${t('disc.done.cta')}</a>
     </div></div>`;
   }
@@ -2424,24 +2526,18 @@ function swipeTop(dir, fromDrag = false) {
     setTimeout(() => f.remove(), 900);
   };
   const st = discoverState();
-  if ((st.n || 0) >= RP_LADDER.length) return;
+  if (st.charges <= 0) return;
   {
     const gain = discoverReward();
-    st.n = (st.n || 0) + 1;
+    if (st.charges >= DISCOVER_MAX) st.ts = Date.now();
+    st.charges -= 1;
     localStorage.setItem(DISCOVER_KEY, JSON.stringify(st));
     addXp(gain, null, { swipes: 1 });
     discFloat('+' + fmtRP(gain) + ' RP', false);
     const leftEl = document.getElementById('disc-left');
-    const remaining = RP_LADDER.length - st.n;
-    if (leftEl) {
-      if (remaining > 0) leftEl.textContent = remaining;
-      else {
-        const sub = document.getElementById('disc-sub');
-        if (sub) sub.innerHTML = t('disc.sub') + ' ' + t('disc.spent');
-      }
-    }
+    if (leftEl && st.charges > 0) leftEl.textContent = st.charges;
   }
-  const capped = (discoverState().n || 0) >= RP_LADDER.length;
+  const capped = discoverState().charges <= 0;
   deckIdx++;
   if (capped) { setTimeout(renderRoute, 700); return; }
   setTimeout(renderDeck, fromDrag ? 240 : 300);
@@ -2449,7 +2545,7 @@ function swipeTop(dir, fromDrag = false) {
 
 /* ---------- spin (wheel, 60s cooldown, pays production time) ---------- */
 const WHEEL_KEY = 'rambuy.wheel';
-const SPIN_COOLDOWN = 120000;
+const SPIN_COOLDOWN = 60000;
 // Segments pay N seconds of your production (with an early-game floor).
 // EV ~43s of production per spin at a 120s cooldown => a solid but not
 // dominant ~35% bonus for players who keep coming back.
@@ -2537,9 +2633,9 @@ function tickNavBadges() {
   const spinDot = document.querySelector('#nav-spin .nav-dot');
   if (spinDot) spinDot.hidden = !featureUnlocked('spin') || spinReadyIn() > 0;
   const discDot = document.querySelector('#nav-discover .nav-dot');
-  if (discDot) discDot.hidden = !featureUnlocked('discover') || (discoverState().n || 0) >= RP_LADDER.length;
+  if (discDot) discDot.hidden = !featureUnlocked('discover') || discoverState().charges <= 0;
   const caseDot = document.querySelector('#nav-mystery .nav-dot');
-  if (caseDot) caseDot.hidden = !featureUnlocked('mystery') || !(caseReadyIn() === 0 && rpBal >= caseCost());
+  if (caseDot) caseDot.hidden = !featureUnlocked('mystery') || !(caseReadyIn('standard') === 0 && caseCost('standard') !== null && rpBal >= caseCost('standard'));
   const mkDot = document.querySelector('#nav-market .nav-dot');
   if (mkDot) mkDot.hidden = !featureUnlocked('market') || !loadMarket().pos;
 
@@ -2557,12 +2653,41 @@ function tickNavBadges() {
   }
 }
 
+function caseStatsHtml(type) {
+  const cost = caseCost(type);
+  if (cost === null) return '';
+  let ev = 0, win = 0;
+  for (const o of caseOutcomes(type)) {
+    ev += o.prob * (o.p.rpCost / cost);
+    if (o.p.rpCost >= cost) win += o.prob;
+  }
+  return `<div class="ct-stats">${t('case.stats', { ev: Math.round(ev * 100), win: Math.round(win * 100) })}</div>`;
+}
+
+function caseDropsHtml(type) {
+  return caseOutcomes(type).map(o => {
+    const rev = isRevealed(o.p);
+    return `<div class="ct-drop">
+      <img src="${rev ? o.p.img : 'assets/ram-mystery.webp'}" alt="">
+      <span>${rev ? o.p.name : t('ladder.locked.name')}</span>
+      <b>${o.pct}%</b>
+    </div>`;
+  }).join('') + caseStatsHtml(type);
+}
+
 function tickCaseBtn() {
-  const btn = document.getElementById('pack-btn');
-  if (!btn || document.getElementById('case-reel')) return;
-  const wait = caseReadyIn();
-  if (wait > 0) { btn.disabled = true; btn.textContent = t('case.next', { s: Math.ceil(wait / 1000) }); }
-  else { btn.disabled = false; btn.textContent = t('case.open', { amount: fmtRP(caseCost()) }); }
+  document.querySelectorAll('[data-drops]').forEach(el => {
+    const html = caseDropsHtml(el.dataset.drops);
+    if (el.innerHTML !== html) el.innerHTML = html;
+  });
+  document.querySelectorAll('[data-case]').forEach(btn => {
+    const k = btn.dataset.case;
+    const wait = caseReadyIn(k);
+    const cost = caseCost(k);
+    if (cost === null) { btn.disabled = true; btn.innerHTML = `${icon('lock', 13)} ${t('case.locked', { n: caseRevealNeed(k) })}`; }
+    else if (wait > 0) { btn.disabled = true; btn.textContent = t('case.next', { s: Math.ceil(wait / 1000) }); }
+    else { btn.disabled = rpBal < cost; btn.textContent = t('case.open', { amount: fmtRP(cost) }); }
+  });
 }
 
 function tickSpinBtn() {
@@ -2581,6 +2706,9 @@ function spinWheel() {
   const btn = document.getElementById('spin-btn');
   const svg = document.getElementById('wheel-svg');
   if (!btn || btn.disabled || spinReadyIn() > 0) return;
+  // Cooldown startuje od razu (nie po animacji) - kropka w menu znika natychmiast.
+  localStorage.setItem(WHEEL_KEY, JSON.stringify({ ts: Date.now() }));
+  tickNavBadges();
   btn.disabled = true;
   btn.dataset.spinning = '1';
   btn.textContent = '…';
@@ -2591,7 +2719,7 @@ function spinWheel() {
   const target = 5 * 360 + (360 - (i + 0.5) * seg) + (Math.random() - 0.5) * seg * 0.5;
   svg.style.transform = `rotate(${target}deg)`;
   sndPop();
-  // Tick as each segment edge passes the pointer — dense early, sparse late,
+  // Tick as each segment edge passes the pointer - dense early, sparse late,
   // matching the wheel's deceleration curve.
   const crossings = Math.floor(target / seg);
   for (let k = 1; k <= crossings; k++) {
@@ -2600,7 +2728,6 @@ function spinWheel() {
   }
   setTimeout(() => {
     const win = spinWin(WHEEL_SEGS[i].sec);
-    localStorage.setItem(WHEEL_KEY, JSON.stringify({ ts: Date.now() }));
     if (WHEEL_SEGS[i].gold) confetti();
     sndSuccess();
     addXp(win, null, { spins: 1 });
@@ -2622,12 +2749,23 @@ const mkStep = () => Math.floor(Date.now() / MK.TICK);
 const mkRnd = (tag, i) => mulberry32(hashStr('ramx.' + tag + '.' + i))();
 
 // RAMX is a pure function of wall-clock time: it keeps moving while nobody
-// is looking and history redraws identically after a reload. Smooth
-// multi-sine drift + per-tick jitter + rare pump/rug spikes that build and
-// fade within a 40-tick block.
+// is looking and history redraws identically after a reload.
+// Kurs = fraktalny szum (suma oktaw seedowanego value noise w log-przestrzeni):
+// wyglada jak random walk i NIE MA sredniej, do ktorej wraca w horyzoncie gry
+// (najwieksza oktawa ~19 h; "kupie i poczekam na pewny zysk" przestaje byc pewne).
+// Poprzedni model (suma sinusow wokol 100) byl mean-reverting - trzymanie pozycji
+// do zysku nigdy nie przegrywalo. Do tego jitter i seedowane pumpy/rugi jak wczesniej.
+function mkNoise(tag, x) {
+  const i = Math.floor(x), f = x - i;
+  const u = f * f * (3 - 2 * f);
+  return (mkRnd(tag, i) * (1 - u) + mkRnd(tag, i + 1) * u) * 2 - 1;
+}
 function mkPriceAt(s) {
-  let v = Math.sin(s / 89) * 0.38 + Math.sin(s / 23) * 0.16 + Math.sin(s / 7.7) * 0.07;
-  v += (mkRnd('jit', s) - 0.5) * 0.07;
+  let v = 0;
+  for (let k = 0, lam = 6, amp = 0.035; k < 12; k++, lam *= 2.4, amp *= 1.3) {
+    v += mkNoise('oct' + k, s / lam) * amp;
+  }
+  v += (mkRnd('jit', s) - 0.5) * 0.05;
   const b = Math.floor(s / 40), r = mkRnd('evt', b);
   if (r < 0.10) {
     const mag = 0.18 + mkRnd('mag', b) * 0.3;
@@ -2636,6 +2774,9 @@ function mkPriceAt(s) {
   return 100 * Math.exp(v);
 }
 const mkPrice = () => mkPriceAt(mkStep());
+// Prowizja gieldy: 3% od sprzedazy - scalping na malych ruchach jest EV-ujemny.
+const MK_FEE = 0.03;
+const mkNetValue = (pos, price) => Math.floor(pos.stake * (price / pos.entry) * (1 - MK_FEE));
 
 let mkPct = 25;
 let mkHist = [];
@@ -2652,13 +2793,15 @@ function mkPanelHtml(m = loadMarket()) {
       <div class="mk-stat"><span>${t('market.value')}</span><b id="mk-value"></b></div>
       <div class="mk-stat"><span>${t('market.pnl')}</span><b id="mk-pnl"></b></div>
     </div>
-    <button class="btn big" id="mk-sell" onclick="mkSell()"></button>`;
+    <button class="btn big" id="mk-sell" onclick="mkSell()"></button>
+    <p class="queue-note" style="margin-top:8px">${t('market.fee', { pct: MK_FEE * 100 })}</p>`;
   }
   return `
   <div class="mk-stakes">
     ${[10, 25, 50, 100].map(p => `<button class="mk-pct ${p === mkPct ? 'on' : ''}" onclick="mkSetPct(${p})">${p === 100 ? 'ALL-IN' : p + '%'}</button>`).join('')}
   </div>
-  <button class="btn big" id="mk-buy" onclick="mkBuy()"></button>`;
+  <button class="btn big" id="mk-buy" onclick="mkBuy()"></button>
+  <p class="queue-note" style="margin-top:8px">${t('market.fee', { pct: MK_FEE * 100 })}</p>`;
 }
 
 function marketView() {
@@ -2770,7 +2913,7 @@ function mkDraw(slide = false) {
     entry.style.display = '';
     entry.setAttribute('y1', sc.y(m.pos.entry).toFixed(1));
     entry.setAttribute('y2', sc.y(m.pos.entry).toFixed(1));
-    const val = m.pos.stake * price / m.pos.entry;
+    const val = mkNetValue(m.pos, price);
     const pnl = val - m.pos.stake;
     const vEl = document.getElementById('mk-value');
     if (vEl) vEl.textContent = fmtRP(val) + ' RP';
@@ -2819,7 +2962,7 @@ function mkSell() {
   if (!m.pos) return;
   const price = mkPrice();
   const x = price / m.pos.entry;
-  const proceeds = Math.floor(m.pos.stake * x);
+  const proceeds = mkNetValue(m.pos, price);
   const profit = proceeds - m.pos.stake;
   if (profit > 0) { rpBal += m.pos.stake; saveRp(); addXp(profit); }
   else { rpBal += proceeds; saveRp(); updateXpChip(); }
@@ -2861,6 +3004,9 @@ function scratchHtml(order) {
       <h3>${icon('ticket', 16)} ${t('scratch.title')}</h3>
       <p>${t('scratch.revealedWith', { id: order.id })}</p>
       <div class="scratch-under" style="position:static;width:${SCRATCH_W}px;max-width:100%;height:${SCRATCH_H}px;margin:0 auto"><b>${code}</b><small>${t('scratch.off', { pct })}</small></div>
+      ${hasScratchedAny()
+        ? `<label class="auto-promo"><input type="checkbox" ${autoPromoOn() ? 'checked' : ''} onchange="setAutoPromo(this.checked)"><span>${t('scratch.autoApply')}</span></label>`
+        : `<label class="auto-promo locked" data-tip="${t('scratch.autoLockedTip')}"><input type="checkbox" checked disabled><span>${icon('lock', 12)} ${t('scratch.autoApply')}</span></label>`}
     </div>`;
   }
   return `
@@ -2871,6 +3017,9 @@ function scratchHtml(order) {
       <div class="scratch-under"><b>${code}</b><small>${t('scratch.off', { pct })}</small></div>
       <canvas id="scratch-cv" width="${SCRATCH_W}" height="${SCRATCH_H}"></canvas>
     </div>
+    ${hasScratchedAny()
+        ? `<label class="auto-promo"><input type="checkbox" ${autoPromoOn() ? 'checked' : ''} onchange="setAutoPromo(this.checked)"><span>${t('scratch.autoApply')}</span></label>`
+        : `<label class="auto-promo locked" data-tip="${t('scratch.autoLockedTip')}"><input type="checkbox" checked disabled><span>${icon('lock', 12)} ${t('scratch.autoApply')}</span></label>`}
   </div>`;
 }
 
@@ -2899,7 +3048,11 @@ function bindScratch(order) {
   };
   const checkDone = () => {
     if (cleared) return;
-    const data = ctx.getImageData(0, 0, SCRATCH_W, SCRATCH_H).data;
+    // Liczy sie tylko srodkowe 60% szerokosci (tam jest kod) - boczne
+    // marginesy po 20% nie wliczaja sie do progu zdrapania.
+    const x0 = Math.round(SCRATCH_W * 0.2);
+    const zoneW = Math.round(SCRATCH_W * 0.6);
+    const data = ctx.getImageData(x0, 0, zoneW, SCRATCH_H).data;
     let clearPx = 0;
     for (let i = 3; i < data.length; i += 16) { if (data[i] === 0) clearPx++; }
     if (clearPx / (data.length / 16) > 0.45) {
@@ -2907,10 +3060,21 @@ function bindScratch(order) {
       cv.style.transition = 'opacity .4s';
       cv.style.opacity = 0;
       order.scratched = true;
+      if (trackedOrder && trackedOrder.id === order.id) trackedOrder.scratched = true;
       persistOrder(order);
       grantCode('LUCKY' + (10 + hashStr(order.id) % 16));
+      dbg('scratch', { code: 'LUCKY' + (10 + hashStr(order.id) % 16) });
+      const ap = document.querySelector('.auto-promo.locked');
+      if (ap) {
+        ap.classList.remove('locked');
+        ap.removeAttribute('data-tip');
+        const inp = ap.querySelector('input');
+        inp.disabled = false;
+        inp.onchange = function () { setAutoPromo(this.checked); };
+        ap.querySelector('span').textContent = t('scratch.autoApply');
+      }
       sndSuccess();
-      addXp(Math.max(30, Math.round(cps() * 60)), t('scratch.revealed'));
+      addXp(Math.max(30, Math.round(cps() * 15)), t('scratch.revealed'));
     }
   };
   cv.addEventListener('pointerdown', e => { scratching = true; cv.setPointerCapture(e.pointerId); scratch(e); });
@@ -2944,8 +3108,6 @@ const ACHIEVEMENTS = [
   { id: 'trader', icon: 'arrow-right-left', tiers: [10, 100, 1000], value: () => loadStats().trades || 0 },
   { id: 'moonshot', icon: 'chart-line', tiers: [1], value: () => (loadStats().bestTradeX || 0) >= 1.5 ? 1 : 0 },
   { id: 'scout', icon: 'heart', tiers: [50, 500, 5000], value: () => loadStats().swipes || 0 },
-  { id: 'patient', icon: 'hourglass', tiers: [1], value: () => (loadCodes().includes('PATIENCE40') || loadOrders().some(o => o.promo === 'PATIENCE40')) ? 1 : 0 },
-  { id: 'coupons', icon: 'ticket', tiers: [1, 10, 50], value: () => loadOrders().filter(o => o.promo).length },
   { id: 'golden', icon: 'gift', tiers: [1, 10, 50], value: () => loadStats().golden || 0 },
   { id: 'critic', icon: 'star', tiers: [1, 5, 20], value: () => Object.values(loadReviews()).reduce((a, l) => a + l.length, 0) },
   { id: 'night', icon: 'moon', tiers: [1], value: () => loadStats().nightOrders || 0 },
@@ -2971,7 +3133,7 @@ function checkAchievements(silent = false) {
       changed = true;
       if (!silent) {
         sndPop();
-        toast(t('ach.toast', { name: achName(a) }) + (a.tiers.length > 1 ? ' — ' + tierName(tier) : ''), 'trophy');
+        toast(t('ach.toast', { name: achName(a) }) + (a.tiers.length > 1 ? ' - ' + tierName(tier) : ''), 'trophy');
       }
     }
   });
@@ -3006,9 +3168,9 @@ function achievementsHtml() {
 }
 
 /* ---------- feature level gates ---------- */
-const FEATURE_LVL = { spin: 10, market: 18, discover: 20, mystery: 30, drop: 20, instant: 25, herobuy: 40 };
-const FEATURE_ICON = { spin: 'rotate-ccw', market: 'chart-line', discover: 'heart', mystery: 'gift', drop: 'ticket', instant: 'zap', herobuy: 'shopping-bag' };
-const FEATURE_ROUTE = { spin: '#/spin', market: '#/market', discover: '#/discover', mystery: '#/mystery', drop: '#/drop', instant: '#/', herobuy: '#/' };
+const FEATURE_LVL = { spin: 5, discover: 10, mystery: 15, market: 20, herobuy: 25 };
+const FEATURE_ICON = { spin: 'rotate-ccw', market: 'chart-line', discover: 'heart', mystery: 'gift', herobuy: 'shopping-bag' };
+const FEATURE_ROUTE = { spin: '#/spin', market: '#/market', discover: '#/discover', mystery: '#/mystery', herobuy: '#/' };
 
 let unlockQueue = [];
 function showUnlockModal(k) {
@@ -3099,8 +3261,6 @@ function renderRoute() {
   else if (parts[0] === 'bag' || parts[0] === 'checkout') html = bagView();
   else if (parts[0] === 'order') html = orderView(parts[1]);
   else if (parts[0] === 'orders') html = ordersView();
-  else if (parts[0] === 'compare') html = compareView();
-  else if (parts[0] === 'drop') html = featureUnlocked('drop') ? queueView() : lockedFeatureView('drop');
   else if (parts[0] === 'mystery') html = featureUnlocked('mystery') ? mysteryView() : lockedFeatureView('mystery');
   else if (parts[0] === 'discover') html = featureUnlocked('discover') ? discoverView() : lockedFeatureView('discover');
   else if (parts[0] === 'spin') html = featureUnlocked('spin') ? spinView() : lockedFeatureView('spin');
@@ -3112,7 +3272,6 @@ function renderRoute() {
 
   $view.innerHTML = html;
   hydrateIcons();
-  renderCompareUi();
 
   if (parts[0] === 'order') {
     startTracking(parts[1]);
@@ -3123,10 +3282,6 @@ function renderRoute() {
   if (parts[0] === 'product') {
     const p = product(parts[1]);
     if (p) { startPdpLive(p); bindPriceChart(p); rvStars = 5; }
-  }
-  if (parts[0] === 'drop') {
-    tickQueue();
-    viewTimers.push(setInterval(tickQueue, 2000));
   }
   if (parts[0] === 'spin') {
     viewTimers.push(setInterval(tickSpinBtn, 1000));
@@ -3152,10 +3307,18 @@ applyTheme(localStorage.getItem(THEME_KEY) ||
   (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-  navigator.serviceWorker.register('sw.js').catch(() => { /* PWA optional */ });
+  // Dev (rambuy.test / localhost): bez SW - cache maskowal swieze zmiany przy testach.
+  const devHost = location.hostname === 'rambuy.test' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  if (devHost) {
+    navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+    if (window.caches) caches.keys().then(ks => ks.forEach(k => caches.delete(k)));
+  } else {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* PWA optional */ });
+  }
 }
 
 window.addEventListener('hashchange', renderRoute);
+dbgHud();
 window.addEventListener('scroll', () => {
   document.getElementById('to-top')?.classList.toggle('show', window.scrollY > 700);
 }, { passive: true });
@@ -3175,7 +3338,7 @@ updateXpChip();
 tickNavBadges();
 setTimeout(() => checkAchievements(!localStorage.getItem(ACH_KEY)), 2500);
 renderRoute();
-scheduleFeed(9000);
+scheduleFeed(18000);
 offlineEarnings();
 viewTimersGlobalTick = setInterval(tickEconomy, 1000);
 scheduleGolden();

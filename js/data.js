@@ -75,7 +75,7 @@ const PRODUCTS = [
     rating: 4.6, reviews: 5102,
     stock: 12,
     speed: '5600 MT/s', latency: 'CL40', voltage: '1.10 V', profile: 'JEDEC',
-    desc: 'Bare-PCB SO-DIMM for laptops and mini PCs. No heatsink, no nonsense — just a full 32GB upgrade in one slot.',
+    desc: 'Bare-PCB SO-DIMM for laptops and mini PCs. No heatsink, no nonsense - just a full 32GB upgrade in one slot.',
   },
   {
     id: 'ecc-128',
@@ -374,7 +374,7 @@ const PRODUCTS = [
     rating: 4.9, reviews: 1986,
     stock: 1, limited: true,
     speed: '6400 MT/s', latency: 'CL40', voltage: '1.45 V', profile: 'XMP 3.0',
-    desc: 'Gunmetal spreaders with live coolant loops reading 3.6 roentgen — not great, not terrible.',
+    desc: 'Gunmetal spreaders with live coolant loops reading 3.6 roentgen - not great, not terrible.',
   },
   {
     id: 'origami',
