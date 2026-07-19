@@ -225,7 +225,7 @@
   "profile.tile.spins": "Obroty kołem",
   "profile.ach.title": "Osiągnięcia",
   "profile.ach.count": "{n} z {total} odblokowanych",
-  "profile.how": "<b>Jak to działa:</b> klikaj moduł na stronie głównej (<b>1 RP + 2% twojej produkcji</b>, 5% szansy na kryt ×10, combo do ×5) · kupuj zestawy - po dostarczeniu produkują RP na zawsze · każdy próg GB zwiększa produkcję o 15% · skrzynki losują zestawy tańsze lub droższe od ceny skrzynki - im większe ryzyko, tym większa możliwa wygrana · złote paczki przelatują co kilka minut - łap je · koło wypłaca czas produkcji · zdrapki dają jednorazowe kody rabatowe · każdy poziom przyspiesza dostawy o <b>21 sekund</b> (twoje docierają w {time}). Wszystko jest fikcyjne. Ale liczby naprawdę rosną.",
+  "profile.how": "<b>Jak to działa:</b> klikaj moduł na stronie głównej (<b>1 RP + 4% twojej produkcji</b>, 5% szansy na kryt ×10, combo do ×5) · kupuj zestawy - po dostarczeniu produkują RP na zawsze · każdy próg GB zwiększa produkcję o 15% · skrzynki losują zestawy tańsze lub droższe od ceny skrzynki - im większe ryzyko, tym większa możliwa wygrana · złote paczki przelatują co kilka minut - łap je · koło wypłaca czas produkcji · zdrapki dają jednorazowe kody rabatowe · każdy poziom przyspiesza dostawy o <b>21 sekund</b> (twoje docierają w {time}). Wszystko jest fikcyjne. Ale liczby naprawdę rosną.",
   "profile.clear": "Wyczyść postęp",
   "profile.clearConfirm": "Na pewno? Kliknij ponownie, aby wszystko wymazać",
   "profile.clearNote": "Usuwa zamówienia, kolekcję, koszyk, saldo i produkcję. Opinie zostają.",

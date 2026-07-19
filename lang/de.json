@@ -221,7 +221,7 @@
   "profile.tile.spins": "Rad-Drehungen",
   "profile.ach.title": "Erfolge",
   "profile.ach.count": "{n} von {total} freigeschaltet",
-  "profile.how": "<b>So funktioniert es:</b> klick das Modul auf der Startseite (<b>1 RP + 2% deiner Produktion</b>, 5% Crit ×10, Combos bis ×5) · kauf Kits - nach der Lieferung produzieren sie für immer RP · jeder GB-Meilenstein steigert die Produktion um 15 % · Cases losen Kits aus, die billiger oder teurer als die Case selbst sind - je höher das Risiko, desto größer der mögliche Gewinn · goldene Pakete fliegen alle paar Minuten vorbei - fang sie · das Rad zahlt Produktionszeit aus · Rubbelkarten vergeben einmalige Rabattcodes · jedes Level macht Lieferungen <b>21 Sekunden schneller</b> (deine kommen in {time} an). Alles ist fiktiv. Die Zahlen gehen aber wirklich nach oben.",
+  "profile.how": "<b>So funktioniert es:</b> klick das Modul auf der Startseite (<b>1 RP + 4% deiner Produktion</b>, 5% Crit ×10, Combos bis ×5) · kauf Kits - nach der Lieferung produzieren sie für immer RP · jeder GB-Meilenstein steigert die Produktion um 15 % · Cases losen Kits aus, die billiger oder teurer als die Case selbst sind - je höher das Risiko, desto größer der mögliche Gewinn · goldene Pakete fliegen alle paar Minuten vorbei - fang sie · das Rad zahlt Produktionszeit aus · Rubbelkarten vergeben einmalige Rabattcodes · jedes Level macht Lieferungen <b>21 Sekunden schneller</b> (deine kommen in {time} an). Alles ist fiktiv. Die Zahlen gehen aber wirklich nach oben.",
   "profile.clear": "Fortschritt löschen",
   "profile.clearConfirm": "Bist du sicher? Klick nochmal, um alles zu löschen",
   "profile.clearNote": "Löscht Bestellungen, Sammlung, Warenkorb, Guthaben und Produktion. Deine Bewertungen bleiben.",

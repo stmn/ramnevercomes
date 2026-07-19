@@ -221,7 +221,7 @@
   "profile.tile.spins": "Giri di ruota",
   "profile.ach.title": "Obiettivi",
   "profile.ach.count": "{n} sbloccati su {total}",
-  "profile.how": "<b>Come funziona:</b> clicca il modulo nella home (<b>1 RP + 2% della tua produzione</b>, 5% di critico ×10, combo fino a ×5) · compra i kit - una volta consegnati producono RP per sempre · ogni traguardo in GB aumenta la produzione del 15% · le casse pescano kit più economici o più costosi della cassa stessa - più alto il rischio, più grande la vincita possibile · i pacchi dorati sfrecciano ogni pochi minuti - acchiappali · la ruota paga tempo di produzione · i gratta e vinci regalano codici sconto monouso · ogni livello rende le consegne <b>21 secondi più veloci</b> (le tue arrivano in {time}). Tutto è fittizio. I numeri però salgono davvero.",
+  "profile.how": "<b>Come funziona:</b> clicca il modulo nella home (<b>1 RP + 4% della tua produzione</b>, 5% di critico ×10, combo fino a ×5) · compra i kit - una volta consegnati producono RP per sempre · ogni traguardo in GB aumenta la produzione del 15% · le casse pescano kit più economici o più costosi della cassa stessa - più alto il rischio, più grande la vincita possibile · i pacchi dorati sfrecciano ogni pochi minuti - acchiappali · la ruota paga tempo di produzione · i gratta e vinci regalano codici sconto monouso · ogni livello rende le consegne <b>21 secondi più veloci</b> (le tue arrivano in {time}). Tutto è fittizio. I numeri però salgono davvero.",
   "profile.clear": "Azzera i progressi",
   "profile.clearConfirm": "Sei sicuro? Clicca di nuovo per cancellare tutto",
   "profile.clearNote": "Cancella ordini, collezione, carrello, saldo e produzione. Le recensioni restano.",

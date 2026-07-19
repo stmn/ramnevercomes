@@ -221,7 +221,7 @@
   "profile.tile.spins": "Giros da roleta",
   "profile.ach.title": "Conquistas",
   "profile.ach.count": "{n} de {total} desbloqueadas",
-  "profile.how": "<b>Como funciona:</b> clica no módulo na página inicial (<b>1 RP + 2% da tua produção</b>, 5% de crítico ×10, combos até ×5) · compra kits - depois de entregues produzem RP para sempre · cada marco de GB aumenta a produção em 15% · as caixas sorteiam kits mais baratos ou mais caros do que a própria caixa - quanto maior o risco, maior o prémio possível · pacotes dourados passam a voar de poucos em poucos minutos - apanha-os · a roleta paga tempo de produção · as raspadinhas dão códigos de desconto de utilização única · cada nível torna as entregas <b>21 segundos mais rápidas</b> (as tuas chegam em {time}). É tudo fictício. Mas os números sobem mesmo.",
+  "profile.how": "<b>Como funciona:</b> clica no módulo na página inicial (<b>1 RP + 4% da tua produção</b>, 5% de crítico ×10, combos até ×5) · compra kits - depois de entregues produzem RP para sempre · cada marco de GB aumenta a produção em 15% · as caixas sorteiam kits mais baratos ou mais caros do que a própria caixa - quanto maior o risco, maior o prémio possível · pacotes dourados passam a voar de poucos em poucos minutos - apanha-os · a roleta paga tempo de produção · as raspadinhas dão códigos de desconto de utilização única · cada nível torna as entregas <b>21 segundos mais rápidas</b> (as tuas chegam em {time}). É tudo fictício. Mas os números sobem mesmo.",
   "profile.clear": "Apagar progresso",
   "profile.clearConfirm": "Tens a certeza? Clica outra vez para apagar tudo",
   "profile.clearNote": "Apaga encomendas, coleção, saco, saldo e produção. As avaliações ficam.",

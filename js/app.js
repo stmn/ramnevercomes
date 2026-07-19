@@ -1914,9 +1914,9 @@ function closeKitReveal(href) {
 /* ---------- main clicker ---------- */
 let frenzyUntil = 0;
 function clickValue() {
-  // 2% produkcji za klik (bylo 1% - przy duzej produkcji klik czul sie bezuzyteczny;
-  // z combo x5 i frenzy x7 aktywne klikanie daje odczuwalny bonus).
-  return (1 + cps() * 0.02) * comboMult() * (Date.now() < frenzyUntil ? 7 : 1);
+  // 4% produkcji za klik (historia: 1% -> 2% -> 4%; przy 1% klik czul sie bezuzyteczny).
+  // Z combo x5 i frenzy x7 aktywne klikanie 8/s daje ~60-100% bonusu do produkcji.
+  return (1 + cps() * 0.04) * comboMult() * (Date.now() < frenzyUntil ? 7 : 1);
 }
 function mainClick(e) {
   dbgClicks.push(Date.now());

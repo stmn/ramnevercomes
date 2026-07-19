@@ -221,7 +221,7 @@
   "profile.tile.spins": "Tiradas de ruleta",
   "profile.ach.title": "Logros",
   "profile.ach.count": "{n} de {total} desbloqueados",
-  "profile.how": "<b>Cómo funciona:</b> haz clic en el módulo de la página de inicio (<b>1 RP + 2% de tu producción</b>, 5% de crítico ×10, combos hasta ×5) · compra kits - una vez entregados producen RP para siempre · cada hito de GB aumenta la producción un 15 % · las cajas sortean kits más baratos o más caros que la propia caja - a mayor riesgo, mayor premio posible · los paquetes dorados pasan volando cada pocos minutos - atrápalos · la ruleta paga tiempo de producción · las tarjetas de rascar reparten códigos de descuento de un solo uso · cada nivel hace las entregas <b>21 segundos más rápidas</b> (las tuyas llegan en {time}). Todo es ficticio. Pero los números sí que suben.",
+  "profile.how": "<b>Cómo funciona:</b> haz clic en el módulo de la página de inicio (<b>1 RP + 4% de tu producción</b>, 5% de crítico ×10, combos hasta ×5) · compra kits - una vez entregados producen RP para siempre · cada hito de GB aumenta la producción un 15 % · las cajas sortean kits más baratos o más caros que la propia caja - a mayor riesgo, mayor premio posible · los paquetes dorados pasan volando cada pocos minutos - atrápalos · la ruleta paga tiempo de producción · las tarjetas de rascar reparten códigos de descuento de un solo uso · cada nivel hace las entregas <b>21 segundos más rápidas</b> (las tuyas llegan en {time}). Todo es ficticio. Pero los números sí que suben.",
   "profile.clear": "Borrar progreso",
   "profile.clearConfirm": "¿Seguro? Haz clic otra vez para borrarlo todo",
   "profile.clearNote": "Borra pedidos, colección, bolsa, saldo y producción. Tus reseñas se quedan.",
