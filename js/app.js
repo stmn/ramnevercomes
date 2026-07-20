@@ -415,32 +415,51 @@ function addToBag(id, qty = 1, quiet = false) {
   return true;
 }
 
-/* ---------- hold-to-add ----------
-   Press and hold any Add-to-bag button: after 350ms it starts adding
+/* ---------- hold-to-add / hold-to-buy ----------
+   Press and hold an Add-to-bag button: after 350ms it starts adding
    10 units per second until you let go, stock runs out or RP runs short.
-   One summary toast fires at the end instead of one per unit. */
+   One summary toast fires at the end instead of one per unit.
+   Instant-buy buttons hold the same way: units accumulate on the button
+   (×N) and release places ONE aggregated order, like a cart checkout. */
 const HOLD_DELAY = 350, HOLD_RATE = 100;
-let holdTimer = null, holdInterval = null, holdCount = 0, holdItemId = null, holdSuppressClick = false;
+let holdTimer = null, holdInterval = null, holdCount = 0, holdItemId = null,
+  holdMode = 'add', holdSuppressClick = false;
+
+// Krok holdu na "Kup teraz": tylko rezerwuje kolejna sztuke (koszt x1.15 za
+// kopie, sumowany lineCost) - RP schodzi dopiero przy zbiorczym zakupie w stopHold.
+function instantHoldStep(btn) {
+  const p = product(holdItemId);
+  if (instantPricing(p, holdCount + 1).cost > rpBal) return false;
+  sndTick(280);
+  btn.innerHTML = `${icon('zap', 13)} ×${holdCount + 1}`;
+  return true;
+}
 
 function stopHold() {
   clearTimeout(holdTimer); clearInterval(holdInterval);
   holdTimer = holdInterval = null;
   if (holdCount > 0) {
-    sndPop();
-    toast(t('toast.addedToBag', { name: `${product(holdItemId).name} ×${holdCount}` }), 'shopping-bag');
+    if (holdMode === 'add') {
+      sndPop();
+      toast(t('toast.addedToBag', { name: `${product(holdItemId).name} ×${holdCount}` }), 'shopping-bag');
+    } else {
+      doInstantBuy(holdItemId, holdCount);
+    }
   }
   holdCount = 0;
 }
 
 document.addEventListener('pointerdown', e => {
-  const btn = e.target.closest('[data-add]');
+  const btn = e.target.closest('[data-add],[data-instant]');
   if (!btn || btn.disabled) return;
-  holdItemId = btn.dataset.add;
+  holdMode = btn.dataset.add ? 'add' : 'instant';
+  holdItemId = btn.dataset.add || btn.dataset.instant;
   holdCount = 0;
   holdSuppressClick = false;
   holdTimer = setTimeout(() => {
     holdInterval = setInterval(() => {
-      if (!addToBag(holdItemId, 1, true)) { stopHold(); return; }
+      const ok = holdMode === 'add' ? addToBag(holdItemId, 1, true) : instantHoldStep(btn);
+      if (!ok) { stopHold(); return; }
       holdCount++;
       holdSuppressClick = true;
     }, HOLD_RATE);
@@ -448,9 +467,9 @@ document.addEventListener('pointerdown', e => {
 });
 document.addEventListener('pointerup', stopHold);
 document.addEventListener('pointercancel', stopHold);
-// The release click after a hold must not add one more unit on top.
+// The release click after a hold must not add/buy one more unit on top.
 document.addEventListener('click', e => {
-  if (holdSuppressClick && e.target.closest('[data-add]')) {
+  if (holdSuppressClick && e.target.closest('[data-add],[data-instant]')) {
     e.preventDefault();
     e.stopPropagation();
     holdSuppressClick = false;
@@ -732,13 +751,15 @@ function cardMetaHtml(p) {
   return `<div class="card-meta">${owned ? t('card.owned', { n: owned }) + ' · ' : ''}${stock}</div>`;
 }
 
+const instantBtnLabel = () => `${icon('zap', 13)} ${t('card.instantBuy')}`;
+
 function addBtnHtml(p, big = false) {
   // At 1-second deliveries the bag is ceremony: the card's main button
   // becomes a one-click Instant buy.
   if (!big && instantCardUnlocked()) {
     const can = rpBal >= rpUnitCost(p);
     return `<button class="btn" data-instant="${p.id}" ${can ? '' : 'disabled'}
-      onclick="instantBuy('${p.id}')">${icon('zap', 13)} ${t('card.instantBuy')}</button>`;
+      onclick="instantBuy('${p.id}')">${instantBtnLabel()}</button>`;
   }
   const st = addBtnState(p);
   const cls = big ? 'btn big full' : 'btn';
@@ -840,7 +861,7 @@ function updateHero() {
     if (lead) lead.textContent = descOf(show);
   }
   const key = (featureUnlocked('herobuy') ? 'u:' : 'l' + xpInfo().lvl + ':') + (pick
-    ? pick.id + ':' + (loadBag()[pick.id] || 0)
+    ? pick.id + ':' + (loadBag()[pick.id] || 0) + ':' + (ownedCounts(true)[pick.id] || 0)
     : 'none:' + fmtRP(rpBal));
   if (holder.dataset.key !== key) {
     holder.dataset.key = key;
@@ -1256,11 +1277,11 @@ function instantFromPopover() {
   placeOrder();
 }
 
-// One-click purchase of a single unit straight from a card.
+// One-click purchase straight from a card (qty > 1 przy hold-to-buy).
 // Wycena instant buy z uwzglednieniem kuponu (auto lub recznie zalozonego).
-function instantPricing(p) {
+function instantPricing(p, qty = 1) {
   maybeAutoApplyPromo();
-  const base = rpUnitCost(p);
+  const base = lineCost(p.id, qty);
   const promo = loadPromo();
   const rate = loadCodes().includes(promo) ? promoRate(promo) : 0;
   const discount = Math.round(base * rate);
@@ -1272,18 +1293,18 @@ function instantBuy(id) {
   doInstantBuy(id);
 }
 
-function doInstantBuy(id) {
+function doInstantBuy(id, qty = 1) {
   const p = product(id);
-  const ip = instantPricing(p);
+  const ip = instantPricing(p, qty);
   if (rpBal < ip.cost) { toast(t('toast.needMore', { amount: fmtRP(ip.cost - rpBal) }), 'lock'); return; }
   spendRp(ip.cost);
   if (ip.promo) { consumeCode(ip.promo); localStorage.removeItem(PROMO_KEY); }
-  dbg('instant', { total: ip.cost, promo: ip.promo || '-', disc: ip.discount });
+  dbg('instant', { total: ip.cost, qty, promo: ip.promo || '-', disc: ip.discount });
   const order = {
     id: 'RB-' + Date.now().toString(36).toUpperCase().slice(-6),
     ts: Date.now(),
     dur: deliveredAt(),
-    items: [{ id, qty: 1 }],
+    items: [{ id, qty }],
     total: ip.cost, promo: ip.promo, discount: ip.discount,
     name: 'friend', city: 'Your address',
   };
@@ -1293,9 +1314,31 @@ function doInstantBuy(id) {
   orders.unshift(order);
   saveOrders(orders);
   sndPop();
-  toast(t('toast.ordered', { name: p.name, time: fmtDuration(deliveredAt()) }), 'zap');
-  keepScrollY = window.scrollY;
-  renderRoute();
+  toast(t('toast.ordered', { name: qty > 1 ? `${p.name} ×${qty}` : p.name, time: fmtDuration(deliveredAt()) }), 'zap');
+  refreshAfterInstant(id);
+}
+
+// Zakup bez renderRoute: pelny re-render niszczyl przycisk pod kursorem
+// (szybkie klikanie nie dzialalo, strona "mrugala" jak przy reloadzie).
+// Odswiezamy w miejscu tylko to, co zakup zmienia; reszte dociagnie tick.
+function refreshAfterInstant(id) {
+  updateRpChips();
+  refreshStockButtons();
+  tickNavBadges();
+  updateHero();
+  const p = product(id);
+  document.querySelectorAll(`[data-instant="${id}"]`).forEach(btn => {
+    btn.innerHTML = instantBtnLabel();
+    const card = btn.closest('.prod-card');
+    if (!card) return;
+    const price = card.querySelector('.price');
+    if (price) {
+      price.textContent = `${fmtRP(rpUnitCost(p))} RP`;
+      price.setAttribute('data-tip', t('card.nextCopyTip', { n: ownedCounts(true)[id] || 0 }));
+    }
+    const meta = card.querySelector('.card-meta');
+    if (meta) meta.outerHTML = cardMetaHtml(p);
+  });
 }
 
 function shareKit(id) {
@@ -1928,6 +1971,9 @@ function tickEconomy() {
   refreshStockButtons();
   updateHero();
   if (Date.now() % 10000 < 1000) checkAchievements();
+  updateRpChips();
+}
+function updateRpChips() {
   document.querySelectorAll('[data-rp]').forEach(el => {
     const k = el.dataset.rp;
     el.textContent = k === 'bal' ? fmtRP(rpBal) : k === 'cps' ? fmtRP(cps()) : fmtRP(Math.round(clickValue()));
