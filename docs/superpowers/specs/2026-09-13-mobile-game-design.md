@@ -62,7 +62,7 @@ Odblokowania poziomami jak dziś: koło 5, discover 10, skrzynki 15, giełda 20,
 
 - Pionowa płyta PCB przewijana w pionie. 59 slotów DIMM w sekcjach po 6 ("rewizja płyty" A, B, C...), nowa sekcja odsłania się z animacją, gdy odkryty zostaje pierwszy kit tej sekcji. Slot pusty: obrys z paskiem styków. Slot z kitem: stylizowana kość w kolorach kitu (paleta 2 kolorów na kit w danych), licznik kopii, delikatna poświata. Nieodkryty slot: przerywany obrys.
 - Procesor przyklejony do dołu sceny (nie przewija się). Jest celem tapnięcia. Impulsy danych ze slotów płyną ścieżkami do szyny i do procesora; częstotliwość impulsów na kit proporcjonalna do udziału kitu w produkcji (min 0.4/s, max 6/s na kit; przy więcej niż 12 aktywnych kitach impulsy agregowane per sekcja, żeby nie przekroczyć ~40 impulsów na ekranie).
-- Klik: pierścień, cząsteczki, unoszący się "+n", puls poświaty. Kryt: drżenie sceny, bursztynowy pierścień, haptyka "heavy". Combo: pasek pod procesorem, mnożnik x1..x5 jak dziś (streak resetuje się po 900 ms).
+- Klik: pierścień, cząsteczki, unoszący się "+n", puls poświaty. Kryt: drżenie sceny, bursztynowy pierścień, haptyka "heavy". Combo: pasek pod procesorem, progi 10/25/50 klików (x2/x3/x5), seria pęka po 700 ms bez kliku.
 - Elementy pakietów na płycie: układy SMD ulepszeń przy slotach (6.1), dron z paczką (6.2), karty Chrome na procesorze (6.3), pasek LED na krawędzi (6.8), wafel w prawym górnym rogu (6.6), ticker nad zakładkami (6.9).
 - Skiny sceny: kolor laminatu zmienia się z rewizją RMA (6.7) i sezonem (6.10). Motyw jasny/ciemny nie dotyczy sceny (scena jest zawsze ciemna), tylko ekranów DOM.
 - Wydajność: 60 fps na iPhone SE 2; cząsteczki w jednym ParticleContainer; scena pauzuje rysowanie w tle i na innych zakładkach (logika tyka dalej).
@@ -72,7 +72,7 @@ Odblokowania poziomami jak dziś: koło 5, discover 10, skrzynki 15, giełda 20,
 Przeniesione 1:1 z gry webowej, z tymi samymi stałymi (źródło prawdy: `js/app.js`, `js/data.js` i sekcja "Balans ekonomii" w CLAUDE.md rambuy):
 
 - Drabinka 59 kitów, koszt kopii x1.15, tier x2.00, produkcja x1.618, próg odkrycia 8x ceny.
-- Klik = 1 RP + 4% produkcji, kryt 5% x10, combo do x5.
+- Klik = (1 + 4% produkcji) x combo x frenzy, kryt 5% x10; combo: 10/25/50 kolejnych klików w odstępach < 700 ms daje x2/x3/x5.
 - Poziomy i XP (xp = 50 * 2^lvl), dostawy skracane o 21 s na poziom, czas dostawy mrożony przy zamówieniu, instant buy przy dostawie <= 1 s.
 - Kamienie GB: prodMult = 1.15^n, GB tylko z dostarczonych kitów i skrzynek.
 - Skrzynki: trzy typy, po 8 dropów, EV 110/125/150%, cooldowny 2/5/10 min, cena kotwicy, okno dropów przycięte do odkryć, inwariant lvl 15.
@@ -191,13 +191,14 @@ Klany i kontrakty co-op (wymagają backendu), gacha na maskotki (skrzynki spełn
 
 ## 8. Balans i symulator
 
-`packages/core/src/sim` odtwarza obecny symulator odkryć z rambuy i rozszerza go o ulepszenia, paczki, karty, offline, RMA i RGB. Profile gracza: pasywny (0 klików, 1 sesja dziennie), umiarkowany (4 sesje po 5 min, 3 kliki/s), aktywny (8 sesji po 10 min, 8 klików/s, wszystkie paczki). Testy `vitest` wymuszają:
+`packages/core/src/sim` odtwarza logikę gry na profilach gracza: idle (gra ciągła, 0 klików), continuous (gra ciągła, 3 kliki/s), passive (1 sesja 5 min dziennie), moderate (4 sesje po 5 min, 3 kliki/s), active (8 sesji po 10 min, 8 klików/s). Polityka zakupów: najdroższy odkryty kit, na który stać. Testy `vitest` wymuszają:
 
-1. Czas odkrycia tierów 2-6 dla profilu umiarkowanego w granicach ±20% wartości bazowych 6.7 / 11.7 / 18 / 27 / 37 min.
-2. Efektywny wzrost produkcji na tier < 2.0 dla każdego profilu, do tieru 59 i do 1000 kredytów RMA.
-3. Odstępy między odkryciami niemalejące od tieru 6 (gra nie ucieka).
-4. Bonus aktywności (aktywny vs pasywny) między x2 a x3 produkcji pasywnej.
+1. Gra ciągła z 3 klikami/s odkrywa tier 2 w oknie 3-15 min i tier 6 przed 90 min.
+2. Wzrost produkcji drabinki x bonus kamienia GB (1.15) < 2.0 na tier, od tieru 2 (tier 1 to zaokrąglenie 1 -> 2 RP/s). Po dodaniu ulepszeń (6.1), RGB (6.8) i RMA (6.7) do iloczynu wchodzi ich średni wkład na tier.
+3. Odstępy między odkryciami niemalejące od tieru 4 dla gracza idle (gra nie ucieka).
+4. Produkcja w pełni aktywnego gracza (8 klików/s, combo x5, średni kryt) między x2 a x3.5 pasywnej.
 5. Inwariant skrzynek: na poziomie 15 co najmniej 11 odkrytych kitów.
+6. Czas odkrycia tierów 2-10 dla profilu continuous w granicach ±20% nagranej linii bazowej (`sim/baseline.json`, nagrywanej świadomie przy zmianie balansu).
 
 Każda zmiana stałej w `core` bez zielonych testów symulatora nie przechodzi CI.
 
