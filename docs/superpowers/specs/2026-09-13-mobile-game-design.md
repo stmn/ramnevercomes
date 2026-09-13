@@ -183,7 +183,7 @@ Klany i kontrakty co-op (wymagają backendu), gacha na maskotki (skrzynki spełn
 
 ## 7. Stan, zapis, czas
 
-- Jeden obiekt stanu w `core`, serializowany do JSON: `{ v: 1, createdAt, lastSeen, rp, xpTotal, kits: {id: {copies, deliveredAt[], level}}, upgrades: [...], golden: {active: [...], nextAt}, leaks: [...], offline: {...}, missions: {...}, wafer: {...}, prestige: {credits, revision, bios: [...]}, achievements: {...}, cases: {...}, spin: {...}, market: {...}, discover: {...}, coupons: {...}, stats: {...}, settings: {...}, seasons: {...} }`.
+- Jeden obiekt stanu w `core`, serializowany do JSON: `{ v: 1, createdAt, lastSeen, rp, xpTotal, orders: [{id, ts, dur, items, total}], drops: [{id, ts, rarity}], upgrades: [...], golden: {active: [...], nextAt}, leaks: [...], offline: {...}, missions: {...}, wafer: {...}, prestige: {credits, revision, bios: [...]}, achievements: {...}, cases: {...}, spin: {...}, market: {...}, discover: {...}, coupons: {...}, stats: {...}, settings: {...}, seasons: {...} }`.
 - Zapis: Capacitor Filesystem w katalogu danych aplikacji, plik `rnc.save.json` plus kopia `rnc.save.bak.json` z poprzedniego zapisu. Autozapis co 5 s gdy stan się zmienił, oraz na `appStateChange` (tło) i `pause`. Odczyt przy starcie: plik główny, przy błędzie parsowania kopia, przy obu błędach nowy stan i komunikat. Migracje wersji w `core/save`, testowane na zapisach z poprzednich wersji trzymanych w repo jako fixtures.
 - Pętla: `requestAnimationFrame` do rysowania, logika w stałym kroku 100 ms (`tick(state, 0.1, now)`), maks 50 kroków nadrabiania na klatkę; nadwyżka trafia do liczenia offline.
 - Czas: `Date.now()`; delta ujemna traktowana jako 0; delta powyżej limitu offline obcinana. Zegary cooldownów i wafla oparte na znacznikach absolutnych, więc cofnięcie zegara urządzenia wydłuża, nie skraca. Brak walidacji serwerowej (nie ma serwera).
@@ -193,12 +193,13 @@ Klany i kontrakty co-op (wymagają backendu), gacha na maskotki (skrzynki spełn
 
 `packages/core/src/sim` odtwarza logikę gry na profilach gracza: idle (gra ciągła, 0 klików), continuous (gra ciągła, 3 kliki/s), passive (1 sesja 5 min dziennie), moderate (4 sesje po 5 min, 3 kliki/s), active (8 sesji po 10 min, 8 klików/s). Polityka zakupów: najdroższy odkryty kit, na który stać. Testy `vitest` wymuszają:
 
-1. Gra ciągła z 3 klikami/s odkrywa tier 2 w oknie 3-15 min i tier 6 przed 90 min.
+1. Gra ciągła z 3 klikami/s odkrywa tier 2 w oknie 2-15 min i tier 6 przed 90 min.
 2. Wzrost produkcji drabinki x bonus kamienia GB (1.15) < 2.0 na tier, od tieru 2 (tier 1 to zaokrąglenie 1 -> 2 RP/s). Po dodaniu ulepszeń (6.1), RGB (6.8) i RMA (6.7) do iloczynu wchodzi ich średni wkład na tier.
-3. Odstępy między odkryciami niemalejące od tieru 4 dla gracza idle (gra nie ucieka).
+3. Odstępy między odkryciami niemalejące od tieru 4 dla gracza idle (gra nie ucieka) (tolerancja 10% na szum zaokrągleń).
 4. Produkcja w pełni aktywnego gracza (8 klików/s, combo x5, średni kryt) między x2 a x3.5 pasywnej.
 5. Inwariant skrzynek: na poziomie 15 co najmniej 11 odkrytych kitów.
 6. Czas odkrycia tierów 2-10 dla profilu continuous w granicach ±20% nagranej linii bazowej (`sim/baseline.json`, nagrywanej świadomie przy zmianie balansu).
+7. Losowość: core nigdy nie woła Math.random, każda funkcja losująca przyjmuje Rng; aplikacja przekazuje Math.random, testy i symulator seedowany mulberry32.
 
 Każda zmiana stałej w `core` bez zielonych testów symulatora nie przechodzi CI.
 
