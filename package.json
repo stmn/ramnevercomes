@@ -1,9 +1,18 @@
 {
-  "name": "rambuy",
+  "name": "ramnevercomes",
+  "version": "1.0.0",
+  "description": "Fictional DDR5 memory store that is secretly an idle game. Nothing ships, no payment is taken.",
+  "homepage": "https://ramnevercomes.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stmn/ramnevercomes.git"
+  },
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node build.mjs"
+    "build": "node build.mjs",
+    "verify": "node scripts/verify-reviews.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.25.0"
