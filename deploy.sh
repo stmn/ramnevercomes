@@ -16,14 +16,10 @@ if [ -n "$PROD_V" ] && [ "$PROD_V" = "$LOCAL_V" ]; then
   echo "UWAGA: CACHE w sw.js ($LOCAL_V) ma te sama wersje co produkcja - powracajacy uzytkownicy nie zobacza zmian bez bumpa."
 fi
 
-node build.mjs
-
 STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
-cp -R dist/ "$STAGE/"
-rsync -a --exclude 'originals' assets/ "$STAGE/assets/"
+./stage.sh "$STAGE"   # build.mjs generuje robots.txt i sitemap.xml do dist/
 KEY=$(cat indexnow-key.txt)
-cp robots.txt "$KEY.txt" "$STAGE/"  # sitemap.xml generuje build.mjs do dist/
 
 npx wrangler pages deploy "$STAGE" --project-name=ramnevercomes --branch=main
 

@@ -7,6 +7,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const out = 'dist';
+// Hosting pod podkatalogiem (GitHub Pages: BASE_PATH=/ramnevercomes) albo w rocie domeny (domyslnie).
+// SITE_ORIGIN to publiczny adres bez koncowego ukosnika, do canonical/og/sitemap/robots.
+const BASE_PATH = (process.env.BASE_PATH || '').replace(/\/+$/, '');
+const ORIGIN = (process.env.SITE_ORIGIN || 'https://ramnevercomes.com').replace(/\/+$/, '');
+// Linki w kodzie sa wzgledem aplikacji ("/product/x"); pod podkatalogiem dostaja prefiks juz w buildzie,
+// zeby "otworz w nowej karcie" i strony statyczne dla robotow tez trafialy w dobry adres.
+const prefixLinks = text => BASE_PATH ? text.replace(/href="\//g, 'href="' + BASE_PATH + '/').replace(/href='\//g, "href='" + BASE_PATH + '/') : text;
 fs.rmSync(out, { recursive: true, force: true });
 for (const d of ['css', 'js', 'lang']) fs.mkdirSync(path.join(out, d), { recursive: true });
 
@@ -22,6 +29,7 @@ for (const f of ['js/app.js', 'js/data.js', 'js/icons.js', 'js/seo-render.js', '
     legalComments: 'none',
     outfile: path.join(out, f),
   });
+  if (f.endsWith('.js')) fs.writeFileSync(path.join(out, f), prefixLinks(fs.readFileSync(path.join(out, f), 'utf8')));
   report.push(`${f}: ${kb(f)} -> ${kb(path.join(out, f))}`);
 }
 
@@ -32,13 +40,15 @@ for (const f of fs.readdirSync('lang')) {
   report.push(`${src}: ${kb(src)} -> ${kb(dst)}`);
 }
 
-for (const f of ['index.html', 'manifest.json']) fs.copyFileSync(f, path.join(out, f));
+fs.copyFileSync('manifest.json', path.join(out, 'manifest.json'));
+fs.writeFileSync(path.join(out, 'index.html'), prefixLinks(fs.readFileSync('index.html', 'utf8'))
+  .replace('<base href="/">', '<base href="' + BASE_PATH + '/">')
+  .replace(/https:\/\/ramnevercomes\.com/g, ORIGIN));
 
 // ---------- statyczne strony produktow (SEO) ----------
 // Ta sama funkcja renderujaca co w przegladarce (js/seo-render.js) uruchomiona
 // w Node: /product/<id>/index.html to indeksowalne wejscia dla wyszukiwarek;
 // nawigacja w grze pozostaje hashowa i nie linkuje do tych stron.
-const ORIGIN = 'https://ramnevercomes.com';
 const sandbox = new Function(
   ['js/data.js', 'js/icons.js', 'js/seo-render.js'].map(f => fs.readFileSync(f, 'utf8')).join(';\n')
   + '; return { PRODUCTS, RV_META, icon, seededReviewsFor, pdpCoreHtml, reviewRowsHtml };'
@@ -56,8 +66,8 @@ const staticPage = p => {
   // Prerender do <main>: crawler widzi tresc bez JS; aplikacja po starcie
   // renderuje te sama trase (pelny, interaktywny widok) w to samo miejsce.
   const core = sandbox.pdpCoreHtml(p, { ...ctx, extras: { desc } });
-  const view = '<div class="page"><div class="pdp">' + core + '</div>'
-    + '<section class="reviews"><h3>' + tEn('rv.title') + '</h3>' + sandbox.reviewRowsHtml(reviews, ctx) + '</section></div>';
+  const view = prefixLinks('<div class="page"><div class="pdp">' + core + '</div>'
+    + '<section class="reviews"><h3>' + tEn('rv.title') + '</h3>' + sandbox.reviewRowsHtml(reviews, ctx) + '</section></div>');
   return shell
     .replace(/<title>[^<]*<\/title>/, '<title>' + esc(p.name) + ' - RamNeverComes</title>')
     .replace(/(<meta name="description" content=")[^"]*/, '$1' + esc(desc))
@@ -75,6 +85,11 @@ const staticPage = p => {
 // SPA fallback dla tras History API (/kits, /spin, ...): Cloudflare Pages
 // serwuje istniejace pliki wprost, reszta sciezek dostaje shell aplikacji.
 fs.writeFileSync(path.join(out, '_redirects'), '/* /index.html 200\n');
+// GitHub Pages nie ma fallbacku: nieznana sciezka dostaje 404.html, ktory jest tym samym shellem
+// (router czyta location.pathname i renderuje trase). .nojekyll: Jekyll ukrylby pliki z "_".
+fs.copyFileSync(path.join(out, 'index.html'), path.join(out, '404.html'));
+fs.writeFileSync(path.join(out, '.nojekyll'), '');
+fs.writeFileSync(path.join(out, 'robots.txt'), 'User-agent: *\nAllow: /\nDisallow: /cdn-cgi/\n\nSitemap: ' + ORIGIN + '/sitemap.xml\n');
 
 const today = new Date().toISOString().slice(0, 10);
 const urls = [{ loc: ORIGIN + '/', freq: 'weekly' }];

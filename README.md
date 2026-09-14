@@ -64,7 +64,7 @@ ramRain()
 
 ## Deploy
 
-`./deploy.sh` builds and publishes to Cloudflare Pages (project `ramnevercomes`) and pings IndexNow. Requires `CLOUDFLARE_API_TOKEN` in the environment or in `.env`.
+Production is GitHub Pages: every push to `main` runs `.github/workflows/pages.yml`, which builds with `BASE_PATH=/ramnevercomes` and publishes `https://stmn.github.io/ramnevercomes`. `./stage.sh <dir>` assembles the same publish directory locally; `./deploy.sh` still publishes to Cloudflare Pages (project `ramnevercomes`) as a fallback and needs `CLOUDFLARE_API_TOKEN` in the environment or in `.env`.
 
 ## License
 

@@ -3294,13 +3294,19 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbo
 /* ---------- router ---------- */
 // Routing na History API: /product/sakura zamiast #/product/sakura.
 // Stare linki hashowe sa przepisywane w miejscu (kompatybilnosc wsteczna).
+// Aplikacja moze byc serwowana z podkatalogu (GitHub Pages: /ramnevercomes/).
+// Jedyne zrodlo prawdy to <base href>: trasy w kodzie sa zawsze wzgledem aplikacji
+// ("/product/sakura"), a prefiks dokladamy tylko w pasku adresu.
+const BASE_PATH = new URL(document.baseURI).pathname.replace(/\/+$/, '');
+const stripBase = p => (BASE_PATH && p.startsWith(BASE_PATH) ? p.slice(BASE_PATH.length) : p).replace(/\/+$/, '') || '/';
 function routePath() {
-  if (location.hash.startsWith('#/')) history.replaceState({}, '', location.hash.slice(1));
-  return decodeURIComponent(location.pathname).replace(/\/+$/, '') || '/';
+  if (location.hash.startsWith('#/')) history.replaceState({}, '', BASE_PATH + location.hash.slice(1));
+  return stripBase(decodeURIComponent(location.pathname));
 }
 function go(path) {
   if (path.startsWith('#')) path = path.slice(1);
-  if (routePath() !== path) history.pushState({}, '', path);
+  path = stripBase(path);
+  if (routePath() !== path) history.pushState({}, '', BASE_PATH + path);
   renderRoute();
 }
 const BASE_TITLE = 'RamNeverComes - Memory. Finally within reach.';
