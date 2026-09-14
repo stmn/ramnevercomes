@@ -165,7 +165,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
 ```json
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "rootDir": "..", "noEmit": true, "lib": ["ES2022", "DOM", "DOM.Iterable"], "types": ["vite/client", "node"] },
+  "compilerOptions": { "noEmit": true, "lib": ["ES2022", "DOM", "DOM.Iterable"], "types": ["vite/client", "node"] },
   "include": ["src/**/*.ts", "src/**/*.json", "test/**/*.ts", "e2e/**/*.ts", "../../packages/core/src/**/*.ts", "../../packages/core/src/**/*.json"]
 }
 ```
@@ -1559,7 +1559,7 @@ export class Board {
   private dot: Texture;
   private state: GameState | null = null;
 
-  private constructor(private readonly app: Application, private readonly host: HTMLElement, private readonly i18n: I18n, private readonly cb: BoardCallbacks) {
+  private constructor(private readonly app: Application, private readonly i18n: I18n, private readonly cb: BoardCallbacks) {
     const dotG = new Graphics().circle(0, 0, 3).fill(0xffffff);
     this.dot = app.renderer.generateTexture(dotG);
     const glowG = new Graphics().circle(0, 0, 90).fill({ color: CYAN, alpha: 0.18 });
@@ -1579,7 +1579,7 @@ export class Board {
     await app.init({ resizeTo: host, background: 0x0a1410, antialias: true, resolution: Math.min(2, window.devicePixelRatio || 1), autoDensity: true });
     host.append(app.canvas);
     app.canvas.style.touchAction = 'none';
-    const board = new Board(app, host, i18n, cb);
+    const board = new Board(app, i18n, cb);
     board.drawBackground();
     app.renderer.on('resize', () => board.drawBackground());
     return board;
@@ -2850,7 +2850,7 @@ describe('mobile sources', () => {
   it('contain no long dashes', () => {
     const roots = ['../src', '../e2e', '../scripts', '../index.html'].map(r => fileURLToPath(new URL(r, import.meta.url)));
     const files = roots.flatMap(r => (statSync(r).isDirectory() ? walk(r) : [r]));
-    for (const f of files) expect(readFileSync(f, 'utf8'), f).not.toMatch(/[–—]/);
+    for (const f of files) expect(readFileSync(f, 'utf8'), f).not.toMatch(/[\u2013\u2014]/);
   });
 });
 ```
